@@ -56,7 +56,7 @@ class pFabricTopo(Topo):
         return
 
 def main():
-    "Create network and run Buffer Sizing experiment"
+    "Create network and run pFabric experiment"
 
     start = time()
     # Reset to known state
@@ -67,7 +67,7 @@ def main():
     net.pingAll()
     net.stop()
     end = time()
-    cprint("Ping took %.3f seconds" % (end - start), "yellow")
+    cprint("Everything took %.3f seconds" % (end - start), "yellow")
 
 if __name__ == '__main__':
     try:
