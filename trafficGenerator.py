@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 from scapy.all import *
 import socket
 import traceback
+import struct
 
 def cprint(s, color, cr=True):
     """Print in color
@@ -43,6 +44,9 @@ parser.add_argument('--packet-size',
 # Expt parameters
 args = parser.parse_args()
 
+def toHexString(num):
+    return struct.pack('>i', num)
+
 def main():
     "Create flow"
 
@@ -51,9 +55,13 @@ def main():
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.connect((args.dest_ip, args.dest_port))
     flow = StreamSocket(skt)
+    payload = "x"*(args.packet_size-44)
     for i in xrange(args.num_packets):
-        pkt = IP(dst=args.dest_ip, len=args.packet_size)/TCP(dport=args.dest_port)/fuzz(Raw())
+        # should we fuzz?
+        prio = (args.num_packets - i)
+        pkt = IP(dst=args.dest_ip, len=args.packet_size, options=IPOption(toHexString(prio)))/TCP(dport=args.dest_port)/Raw(load=payload)
         flow.send(pkt)
+    sleep(2)
     skt.close()
     end = time.time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")

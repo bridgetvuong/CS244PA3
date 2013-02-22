@@ -43,6 +43,9 @@ def main():
         data = conn.recv(1500)
         if not data: break
         print(data)
+        print ''
+        print len(data)
+        print ''
     conn.close()
     skt.close()
 

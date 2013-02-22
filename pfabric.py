@@ -50,9 +50,9 @@ class pFabricTopo(Topo):
 
         # TODO: Add links with appropriate characteristics
         self.addLink(h1, switch,
-          bw=1000, delay='1ms', max_queue_size=10, use_htb=True)
+          bw=1000, delay='0ms', max_queue_size=10, use_htb=True)
         self.addLink(h2, switch,
-          bw=1000, delay='1ms', max_queue_size=10, use_htb=True)
+          bw=1000, delay='0ms', max_queue_size=10, use_htb=True)
         return
 
 def main():
@@ -72,7 +72,7 @@ def main():
     receiver = h2.popen("sudo python trafficServer.py --dest-port %d > receiver.txt" % (1234), shell=True)
     sender = h1.popen("sudo python trafficGenerator.py --dest-ip %s --dest-port %d --num-packets %d > sender.txt" % (h2.IP(), 1234, 10), shell=True)
 
-    sleep(3)
+    sleep(10)
     net.stop()
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
