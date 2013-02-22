@@ -63,8 +63,16 @@ def main():
     topo = pFabricTopo()
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
+
     dumpNodeConnections(net.hosts)
     net.pingAll()
+
+    h1 = net.getNodeByName('h1')
+    h2 = net.getNodeByName('h2')
+    receiver = h2.popen("sudo python trafficServer.py --dest-port %d > receiver.txt" % (1234), shell=True)
+    sender = h1.popen("sudo python trafficGenerator.py --dest-ip %s --dest-port %d --num-packets %d > sender.txt" % (h2.IP(), 1234, 10), shell=True)
+
+    sleep(3)
     net.stop()
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
