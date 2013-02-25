@@ -178,6 +178,7 @@ class TCIntf( Intf ):
        as well as delay, loss and max queue length"""
 
     def bwCmds( self, bw=None, speedup=0, use_hfsc=False, use_tbf=False,
+                use_prio=False, num_bands=100, 
                 latency_ms=None, enable_ecn=False, enable_red=False ):
         "Return tc commands to set bandwidth"
 
@@ -205,6 +206,11 @@ class TCIntf( Intf ):
                 cmds += [ '%s qdisc add dev %s root handle 1: tbf ' +
                           'rate %fMbit burst 15000 latency %fms' %
                           ( bw, latency_ms ) ]
+            elif use_prio:
+                cmds += [ '%s qdisc add dev %s root handle 1: prio bands %d' % num_bands ]
+                for i in xrange(1, num_bands+1):
+                    cmds += [ '%s filter add dev %s parent 1:0 prio 1 protocol ip u32 classid 1:%d' % (i)
+                              + 'match u32 %s 0xffffffff at 20' % hex(i) ]
             else:
                 cmds += [ '%s qdisc add dev %s root handle 1:0 htb default 1',
                           '%s class add dev %s parent 1:0 classid 1:1 htb ' +
@@ -261,6 +267,7 @@ class TCIntf( Intf ):
 
     def config( self, bw=None, delay=None, jitter=None, loss=None,
                 disable_gro=True, speedup=0, use_hfsc=False, use_tbf=False,
+                use_prio=False, num_bands=100,
                 latency_ms=None, enable_ecn=False, enable_red=False,
                 max_queue_size=None, **params ):
         "Configure the port and set its properties."
@@ -283,6 +290,7 @@ class TCIntf( Intf ):
         # Bandwidth limits via various methods
         bwcmds, parent = self.bwCmds( bw=bw, speedup=speedup,
                                       use_hfsc=use_hfsc, use_tbf=use_tbf,
+                                      use_prio=use_prio, num_bands=num_bands,
                                       latency_ms=latency_ms,
                                       enable_ecn=enable_ecn,
                                       enable_red=enable_red )

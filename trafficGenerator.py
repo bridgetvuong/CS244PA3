@@ -36,6 +36,16 @@ parser.add_argument('--num-packets',
                     type=int,
                     required=True)
 
+parser.add_argument('--num-bands',
+                    help="number of priority bands",
+                    type=int,
+                    required=True)
+
+parser.add_argument('--max-packets',
+                    help="maximum number of packets",
+                    type=int,
+                    required=True)
+
 parser.add_argument('--packet-size',
                     help="packet size (bytes)",
                     type=int,
@@ -58,7 +68,9 @@ def main():
     payload = "x"*(args.packet_size-44)
     for i in xrange(args.num_packets):
         # should we fuzz?
-        prio = (args.num_packets - i)
+        packetsLeft = (args.num_packets - i)
+        prio = packetsLeft*args.num_bands/args.max_packets
+        print prio
         pkt = IP(dst=args.dest_ip, len=args.packet_size, options=IPOption(toHexString(prio)))/TCP(dport=args.dest_port)/Raw(load=payload)
         flow.send(pkt)
     sleep(2)
