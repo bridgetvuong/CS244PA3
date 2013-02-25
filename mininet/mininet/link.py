@@ -207,10 +207,10 @@ class TCIntf( Intf ):
                           'rate %fMbit burst 15000 latency %fms' %
                           ( bw, latency_ms ) ]
             elif use_prio:
-                cmds += [ '%s qdisc add dev %s root handle 1: prio bands %d' % num_bands ]
+                cmds += [ '%s qdisc add dev %s root handle 1: prio ' + 'bands %d' % (num_bands) ]
                 for i in xrange(1, num_bands+1):
-                    cmds += [ '%s filter add dev %s parent 1:0 prio 1 protocol ip u32 classid 1:%d' % (i)
-                              + 'match u32 %s 0xffffffff at 20' % hex(i) ]
+                    cmds += [ '%s filter add dev %s parent 1:0 protocol ip prio 1 u32 '
+                              + 'match u32 0x%08x 0xffffffff at 20 flowid 1:%d' % (i, i) ]
             else:
                 cmds += [ '%s qdisc add dev %s root handle 1:0 htb default 1',
                           '%s class add dev %s parent 1:0 classid 1:1 htb ' +

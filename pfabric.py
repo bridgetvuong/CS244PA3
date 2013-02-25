@@ -6,7 +6,7 @@ from mininet.topo import Topo
 from mininet.node import CPULimitedHost
 from mininet.link import TCLink
 from mininet.net import Mininet
-from mininet.log import lg
+from mininet.log import lg, setLogLevel
 from mininet.util import dumpNodeConnections
 
 import subprocess
@@ -53,9 +53,9 @@ class pFabricTopo(Topo):
 
         # TODO: Add links with appropriate characteristics
         self.addLink(h1, switch,
-          bw=1000, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=1000, delay='500ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         self.addLink(h2, switch,
-          bw=1000, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=1000, delay='500ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         return
 
 def main():
@@ -64,6 +64,7 @@ def main():
     start = time()
     # Reset to known state
     topo = pFabricTopo()
+    setLogLevel('debug')
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
 
@@ -73,9 +74,9 @@ def main():
     h1 = net.getNodeByName('h1')
     h2 = net.getNodeByName('h2')
     receiver = h2.popen("sudo python trafficServer.py --dest-port %d > receiver.txt" % (1234), shell=True)
-    sender = h1.popen("sudo python trafficGenerator.py --dest-ip %s --dest-port %d --num-packets %d --num-bands %d > sender.txt" % (h2.IP(), 1234, 10, NUM_PRIO_BANDS), shell=True)
+    sender = h1.popen("sudo python trafficGenerator.py --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d  > sender.txt" % (h2.IP(), 1234, 10, NUM_PRIO_BANDS, 200), shell=True)
 
-    sleep(10)
+    sleep(20)
     net.stop()
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")

@@ -65,15 +65,16 @@ def main():
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.connect((args.dest_ip, args.dest_port))
     flow = StreamSocket(skt)
-    payload = "x"*(args.packet_size-44)
-    for i in xrange(args.num_packets):
+    #payload = "x"*(args.packet_size-44) # 44 is IP header size + TCP header size
+    for i in xrange(1, args.num_packets+1):
         # should we fuzz?
         packetsLeft = (args.num_packets - i)
         prio = packetsLeft*args.num_bands/args.max_packets
         print prio
+        payload = str(prio)*(args.packet_size-44) # 44 is IP header size + TCP header size
         pkt = IP(dst=args.dest_ip, len=args.packet_size, options=IPOption(toHexString(prio)))/TCP(dport=args.dest_port)/Raw(load=payload)
         flow.send(pkt)
-    sleep(2)
+    #sleep(2)
     skt.close()
     end = time.time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
