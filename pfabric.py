@@ -21,7 +21,10 @@ import sys
 import os
 
 # Number of priorities supported
-NUM_PRIO_BANDS = 100
+NUM_PRIO_BANDS = 16
+
+NUM_PACKETS = 10
+MAX_PACKETS = 10
 
 def cprint(s, color, cr=True):
     """Print in color
@@ -53,9 +56,9 @@ class pFabricTopo(Topo):
 
         # TODO: Add links with appropriate characteristics
         self.addLink(h1, switch,
-          bw=1000, delay='500ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=1000, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         self.addLink(h2, switch,
-          bw=1000, delay='500ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=1, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         return
 
 def main():
@@ -74,7 +77,8 @@ def main():
     h1 = net.getNodeByName('h1')
     h2 = net.getNodeByName('h2')
     receiver = h2.popen("sudo python trafficServer.py --dest-port %d > receiver.txt" % (1234), shell=True)
-    sender = h1.popen("sudo python trafficGenerator.py --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d  > sender.txt" % (h2.IP(), 1234, 10, NUM_PRIO_BANDS, 200), shell=True)
+    sender = h1.popen("sudo python trafficGenerator.py --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d  > sender.txt"
+                      % (h2.IP(), 1234, NUM_PACKETS, NUM_PRIO_BANDS, MAX_PACKETS), shell=True)
 
     sleep(20)
     net.stop()

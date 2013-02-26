@@ -4,3 +4,8 @@ wget http://www.secdev.org/projects/scapy/files/scapy-latest.zip
 unzip scapy-latest.zip
 cd scapy-2.*
 sudo python setup.py install
+
+cd ~/CS244PA3/mininet
+sudo python setup.py install
+
+cd ~/CS244PA3

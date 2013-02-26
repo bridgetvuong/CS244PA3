@@ -178,7 +178,6 @@ class TCIntf( Intf ):
        as well as delay, loss and max queue length"""
 
     def bwCmds( self, bw=None, speedup=0, use_hfsc=False, use_tbf=False,
-                use_prio=False, num_bands=100, 
                 latency_ms=None, enable_ecn=False, enable_red=False ):
         "Return tc commands to set bandwidth"
 
@@ -206,11 +205,6 @@ class TCIntf( Intf ):
                 cmds += [ '%s qdisc add dev %s root handle 1: tbf ' +
                           'rate %fMbit burst 15000 latency %fms' %
                           ( bw, latency_ms ) ]
-            elif use_prio:
-                cmds += [ '%s qdisc add dev %s root handle 1: prio ' + 'bands %d' % (num_bands) ]
-                for i in xrange(1, num_bands+1):
-                    cmds += [ '%s filter add dev %s parent 1:0 protocol ip prio 1 u32 '
-                              + 'match u32 0x%08x 0xffffffff at 20 flowid 1:%d' % (i, i) ]
             else:
                 cmds += [ '%s qdisc add dev %s root handle 1:0 htb default 1',
                           '%s class add dev %s parent 1:0 classid 1:1 htb ' +
@@ -257,7 +251,7 @@ class TCIntf( Intf ):
                 cmds = [ '%s qdisc add dev %s ' + parent +
                          ' handle 10: netem ' +
                          netemargs ]
-        return cmds
+        return cmds, ' parent 10:1 '
 
     def tc( self, cmd, tc='tc' ):
         "Execute tc command for our interface"
@@ -267,7 +261,7 @@ class TCIntf( Intf ):
 
     def config( self, bw=None, delay=None, jitter=None, loss=None,
                 disable_gro=True, speedup=0, use_hfsc=False, use_tbf=False,
-                use_prio=False, num_bands=100,
+                use_prio=False, num_bands=16,
                 latency_ms=None, enable_ecn=False, enable_red=False,
                 max_queue_size=None, **params ):
         "Configure the port and set its properties."
@@ -290,16 +284,23 @@ class TCIntf( Intf ):
         # Bandwidth limits via various methods
         bwcmds, parent = self.bwCmds( bw=bw, speedup=speedup,
                                       use_hfsc=use_hfsc, use_tbf=use_tbf,
-                                      use_prio=use_prio, num_bands=num_bands,
                                       latency_ms=latency_ms,
                                       enable_ecn=enable_ecn,
                                       enable_red=enable_red )
         cmds += bwcmds
 
         # Delay/jitter/loss/max_queue_size using netem
-        cmds += self.delayCmds( delay=delay, jitter=jitter, loss=loss,
+        delaycmds, parent = self.delayCmds( delay=delay, jitter=jitter, loss=loss,
                                 max_queue_size=max_queue_size,
                                 parent=parent )
+        cmds += delaycmds
+
+        # Use priority queueing
+        if use_prio:
+            cmds += [ '%s qdisc add dev %s' + parent + 'handle 20: prio ' + 'bands %d' % (num_bands) ]
+            for i in xrange(1, num_bands+1):
+                cmds += [ '%s filter add dev %s parent 20:0 protocol ip prio 1 u32 '
+                          + 'match u32 0x%08x 0xffffffff at 20 classid 20:%d' % (i, i) ]
 
         # Ugly but functional: display configuration info
         stuff = ( ( [ '%.2fMbit' % bw ] if bw is not None else [] ) +

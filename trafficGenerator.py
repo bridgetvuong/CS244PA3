@@ -71,10 +71,9 @@ def main():
         packetsLeft = (args.num_packets - i)
         prio = packetsLeft*args.num_bands/args.max_packets
         print prio
-        payload = str(prio)*(args.packet_size-44) # 44 is IP header size + TCP header size
+        payload = str(prio)*((args.packet_size-44)/len(str(prio)))
         pkt = IP(dst=args.dest_ip, len=args.packet_size, options=IPOption(toHexString(prio)))/TCP(dport=args.dest_port)/Raw(load=payload)
         flow.send(pkt)
-    #sleep(2)
     skt.close()
     end = time.time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
