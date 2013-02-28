@@ -22,6 +22,15 @@ def cprint(s, color, cr=True):
 
 # Parse arguments
 parser = ArgumentParser(description="Bufferbloat tests")
+parser.add_argument('--src-ip',
+                    help="source IP",
+                    required=True)
+
+parser.add_argument('--src-port',
+                    help="source port",
+                    type=int,
+                    required=True)
+
 parser.add_argument('--dest-ip',
                     help="destination IP",
                     required=True)
@@ -38,6 +47,7 @@ parser.add_argument('--num-packets',
 
 parser.add_argument('--num-bands',
                     help="number of priority bands",
+
                     type=int,
                     required=True)
 
@@ -45,6 +55,11 @@ parser.add_argument('--max-packets',
                     help="maximum number of packets",
                     type=int,
                     required=True)
+
+parser.add_argument('--priority',
+                    help="set priority for flow",
+                    type=int,
+                    default=None)
 
 parser.add_argument('--packet-size',
                     help="packet size (bytes)",
@@ -62,19 +77,21 @@ def main():
 
     start = time.time()
 
+    print "HELLO!"
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
-    flow = StreamSocket(skt)
-    #payload = "x"*(args.packet_size-44) # 44 is IP header size + TCP header size
-    for i in xrange(1, args.num_packets+1):
-        # should we fuzz?
-        packetsLeft = (args.num_packets - i)
-        prio = packetsLeft*args.num_bands/args.max_packets
+    print "SOCKET CONNECTED!"
+    for i in xrange(1,args.num_packets+1):
+        prio = args.priority
+        if prio == None:
+            packetsLeft = (args.num_packets - i)
+            prio = packetsLeft*args.num_bands/args.max_packets
         print prio
-        payload = str(prio)*((args.packet_size-44)/len(str(prio)))
-        pkt = IP(dst=args.dest_ip, len=args.packet_size, options=IPOption(toHexString(prio)))/TCP(dport=args.dest_port)/Raw(load=payload)
-        flow.send(pkt)
+        pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
+        skt.sendall(pkt)
     skt.close()
+    print "SOCKET CLOSED!"
     end = time.time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
 

@@ -40,16 +40,18 @@ def main():
     skt.listen(1)
     conn, addr = skt.accept()
     while 1:
-        data = conn.recv(1500)
+        data = conn.recv(1500 - 52) # Packet size - IP and TCP header sizes
         if not data: break
-        print(data)
-        print ''
+        h = ['%02x' % ord(i) for i in data]
+        print string.join(h)
+        print 
         print len(data)
-        print ''
+        print 
     conn.close()
     skt.close()
 
     end = time.time()
+    cprint("Finished receiving at time %.3f" % (end), "yellow")
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
 
 if __name__ == '__main__':

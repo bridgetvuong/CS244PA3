@@ -8,6 +8,7 @@ from mininet.link import TCLink
 from mininet.net import Mininet
 from mininet.log import lg, setLogLevel
 from mininet.util import dumpNodeConnections
+from mininet.cli import CLI
 
 import subprocess
 from subprocess import Popen, PIPE
@@ -58,7 +59,7 @@ class pFabricTopo(Topo):
         self.addLink(h1, switch,
           bw=1000, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         self.addLink(h2, switch,
-          bw=1, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=100, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         return
 
 def main():
@@ -76,11 +77,22 @@ def main():
 
     h1 = net.getNodeByName('h1')
     h2 = net.getNodeByName('h2')
-    receiver = h2.popen("sudo python trafficServer.py --dest-port %d > receiver.txt" % (1234), shell=True)
-    sender = h1.popen("sudo python trafficGenerator.py --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d  > sender.txt"
-                      % (h2.IP(), 1234, NUM_PACKETS, NUM_PRIO_BANDS, MAX_PACKETS), shell=True)
+
+    tcpdumpCmd = "sudo tcpdump -n -x > %s"
+    h1.popen(tcpdumpCmd % ("send_tcpdump.txt"), shell=True)
+    h2.popen(tcpdumpCmd % ("recv_tcpdump.txt"), shell=True)
+
+    flowReceiveCmd = "sudo python trafficServer.py --dest-port %d > %s"
+    h2.popen(flowReceiveCmd  % (1234, "receiver1.txt"), shell=True)
+    h2.popen(flowReceiveCmd  % (1235, "receiver2.txt"), shell=True)
+    sleep(5)
+
+    flowStartCmd = "sudo python trafficGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --priority %d  > %s"
+    h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 1000, NUM_PRIO_BANDS, MAX_PACKETS, 1, "sender1.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1235, h2.IP(), 1235, 10, NUM_PRIO_BANDS, MAX_PACKETS, 16, "sender2.txt"), shell=True)
 
     sleep(20)
+    CLI(net)
     net.stop()
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
