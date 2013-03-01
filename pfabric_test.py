@@ -76,6 +76,11 @@ def main():
     h1 = net.getNodeByName('h1')
     h2 = net.getNodeByName('h2')
 
+    # Configure TCP to use reno and disable advanced features
+    tcpConfigCmd = "sudo ./tcpConfig.sh"
+    subprocess.call(tcpConfigCmd, shell=True)
+
+    # tcpdump at both hosts
     tcpdumpCmd = "sudo tcpdump -n -x > %s"
     h1.popen(tcpdumpCmd % ("send_tcpdump.txt"), shell=True)
     h2.popen(tcpdumpCmd % ("recv_tcpdump.txt"), shell=True)
@@ -94,12 +99,12 @@ def main():
 
     # Run test with low-priority long flow and high-priority short flow
     # Expect short flow to finish before long flow
-    h2.popen(flowReceiveCmd  % (1236, "recv_long2.txt"), shell=True)
-    h2.popen(flowReceiveCmd  % (1237, "recv_short2.txt"), shell=True)
-    sleep(5)
-    h1.popen(flowStartCmd % (h1.IP(), 1236, h2.IP(), 1236, 100, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_long2.txt"), shell=True)
-    h1.popen(flowStartCmd % (h1.IP(), 1237, h2.IP(), 1237, 10, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_short2.txt"), shell=True)
-    sleep(60)
+    #h2.popen(flowReceiveCmd  % (1236, "recv_long2.txt"), shell=True)
+    #h2.popen(flowReceiveCmd  % (1237, "recv_short2.txt"), shell=True)
+    #sleep(5)
+    #h1.popen(flowStartCmd % (h1.IP(), 1236, h2.IP(), 1236, 100, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_long2.txt"), shell=True)
+    #h1.popen(flowStartCmd % (h1.IP(), 1237, h2.IP(), 1237, 10, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_short2.txt"), shell=True)
+    #sleep(60)
 
     CLI(net)
     net.stop()
