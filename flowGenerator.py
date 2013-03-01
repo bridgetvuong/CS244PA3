@@ -10,16 +10,6 @@ import socket
 import traceback
 import struct
 
-def cprint(s, color, cr=True):
-    """Print in color
-       s: string to print
-       color: color to use"""
-    if cr:
-        print T.colored(s, color)
-    else:
-        print T.colored(s, color),
-
-
 # Parse arguments
 parser = ArgumentParser(description="Bufferbloat tests")
 parser.add_argument('--src-ip',
@@ -47,7 +37,6 @@ parser.add_argument('--num-packets',
 
 parser.add_argument('--num-bands',
                     help="number of priority bands",
-
                     type=int,
                     required=True)
 
@@ -69,9 +58,6 @@ parser.add_argument('--packet-size',
 # Expt parameters
 args = parser.parse_args()
 
-def toHexString(num):
-    return struct.pack('>i', num)
-
 def main():
     "Create flow"
 
@@ -91,9 +77,8 @@ def main():
         pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
         skt.sendall(pkt)
     skt.close()
-    print "SOCKET CLOSED!"
     end = time.time()
-    cprint("Everything took %.3f seconds" % (end - start), "yellow")
+    print "Everything took %.3f seconds" % (end - start)
 
 if __name__ == '__main__':
     try:

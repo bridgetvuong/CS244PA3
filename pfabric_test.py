@@ -23,9 +23,7 @@ import os
 
 # Number of priorities supported
 NUM_PRIO_BANDS = 16
-
-NUM_PACKETS = 10
-MAX_PACKETS = 10
+MAX_PACKETS = 100
 
 def cprint(s, color, cr=True):
     """Print in color
@@ -57,9 +55,9 @@ class pFabricTopo(Topo):
 
         # TODO: Add links with appropriate characteristics
         self.addLink(h1, switch,
-          bw=1000, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=500, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         self.addLink(h2, switch,
-          bw=100, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=400, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         return
 
 def main():
@@ -82,16 +80,27 @@ def main():
     h1.popen(tcpdumpCmd % ("send_tcpdump.txt"), shell=True)
     h2.popen(tcpdumpCmd % ("recv_tcpdump.txt"), shell=True)
 
-    flowReceiveCmd = "sudo python trafficServer.py --dest-port %d > %s"
-    h2.popen(flowReceiveCmd  % (1234, "receiver1.txt"), shell=True)
-    h2.popen(flowReceiveCmd  % (1235, "receiver2.txt"), shell=True)
+    flowReceiveCmd = "sudo python flowReceiver.py --dest-port %d > %s"
+    flowStartCmd = "sudo python flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --priority %d  > %s"
+
+    # Run test with high-priority long flow and low-priority short flow
+    # Expect long flow to finish before short flow
+    h2.popen(flowReceiveCmd  % (1234, "recv_long1.txt"), shell=True)
+    h2.popen(flowReceiveCmd  % (1235, "recv_short1.txt"), shell=True)
     sleep(5)
+    h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 100, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_long1.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1235, h2.IP(), 1235, 20, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_short1.txt"), shell=True)
+    sleep(60)
 
-    flowStartCmd = "sudo python trafficGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --priority %d  > %s"
-    h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 1000, NUM_PRIO_BANDS, MAX_PACKETS, 1, "sender1.txt"), shell=True)
-    h1.popen(flowStartCmd % (h1.IP(), 1235, h2.IP(), 1235, 10, NUM_PRIO_BANDS, MAX_PACKETS, 16, "sender2.txt"), shell=True)
+    # Run test with low-priority long flow and high-priority short flow
+    # Expect short flow to finish before long flow
+    h2.popen(flowReceiveCmd  % (1236, "recv_long2.txt"), shell=True)
+    h2.popen(flowReceiveCmd  % (1237, "recv_short2.txt"), shell=True)
+    sleep(5)
+    h1.popen(flowStartCmd % (h1.IP(), 1236, h2.IP(), 1236, 100, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_long2.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1237, h2.IP(), 1237, 10, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_short2.txt"), shell=True)
+    sleep(60)
 
-    sleep(20)
     CLI(net)
     net.stop()
     end = time()
