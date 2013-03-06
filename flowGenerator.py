@@ -64,13 +64,11 @@ def main():
 
     start = time.time()
 
-    print "HELLO!"
+    print "START TIME: %.3f" % start
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
-    sleep(5)
-    print "SOCKET CONNECTED!"
-    for i in xrange(1,args.num_packets+1):
+    for i in xrange(args.num_packets):
         prio = args.priority
         if prio == None:
             packetsLeft = (args.num_packets - i)

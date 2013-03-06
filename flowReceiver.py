@@ -47,7 +47,7 @@ def main():
     skt.close()
 
     end = time.time()
-    print "Finished receiving at time %.3f" % end #%s" % (strftime("%a, %d %b %Y %H:%M:%S", time.gmtime(end)))
+    print "END TIME: %.3f" % end
     print "Everything took %.3f seconds" % (end - start)
 
 if __name__ == '__main__':

@@ -84,8 +84,9 @@ class pFabricTopo(Topo):
 
         usepFabric = (args.tcp == 'minTCP')
         # Add links with appropriate characteristics
-        linkOptions = {'bw': args.bw, 'delay': '%dus' % (args.delay/4), 'max_queue_size': 10}
+        linkOptions = {'bw': args.bw, 'delay': '%dus' % (args.delay/4), 'max_queue_size': 150}
         if usepFabric:
+            linkOptions['max_queue_size'] = 15
             linkOptions['use_prio'] = True
             linkOptions['num_bands'] = NUM_PRIO_BANDS
 
