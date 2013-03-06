@@ -9,6 +9,7 @@ from scapy.all import *
 import socket
 import traceback
 import struct
+import math
 
 # Parse arguments
 parser = ArgumentParser(description="Bufferbloat tests")
@@ -67,12 +68,13 @@ def main():
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
+    sleep(5)
     print "SOCKET CONNECTED!"
     for i in xrange(1,args.num_packets+1):
         prio = args.priority
         if prio == None:
             packetsLeft = (args.num_packets - i)
-            prio = packetsLeft*args.num_bands/args.max_packets
+            prio = int(math.ceil(float(packetsLeft*args.num_bands)/args.max_packets))
         print prio
         pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
         skt.sendall(pkt)

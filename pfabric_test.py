@@ -55,9 +55,9 @@ class pFabricTopo(Topo):
 
         # TODO: Add links with appropriate characteristics
         self.addLink(h1, switch,
-          bw=500, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=4000, delay='10ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         self.addLink(h2, switch,
-          bw=400, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=200, delay='10ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         return
 
 def main():
@@ -93,9 +93,11 @@ def main():
     h2.popen(flowReceiveCmd  % (1234, "recv_long1.txt"), shell=True)
     h2.popen(flowReceiveCmd  % (1235, "recv_short1.txt"), shell=True)
     sleep(5)
-    h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 100, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_long1.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 1000, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_long1.txt"), shell=True)
     h1.popen(flowStartCmd % (h1.IP(), 1235, h2.IP(), 1235, 20, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_short1.txt"), shell=True)
-    sleep(60)
+    for i in xrange(2*90):
+        sleep(0.5)
+        print ". "
 
     # Run test with low-priority long flow and high-priority short flow
     # Expect short flow to finish before long flow
