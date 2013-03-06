@@ -55,9 +55,9 @@ class pFabricTopo(Topo):
 
         # TODO: Add links with appropriate characteristics
         self.addLink(h1, switch,
-          bw=4000, delay='10ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=10000, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         self.addLink(h2, switch,
-          bw=200, delay='10ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
+          bw=1000, delay='0ms', max_queue_size=10, use_prio=True, num_bands=NUM_PRIO_BANDS)
         return
 
 def main():
@@ -79,6 +79,7 @@ def main():
     # Configure TCP to use reno and disable advanced features
     tcpConfigCmd = "sudo ./tcpConfig.sh"
     subprocess.call(tcpConfigCmd, shell=True)
+    print "TCP configured"
 
     # tcpdump at both hosts
     tcpdumpCmd = "sudo tcpdump -n -x > %s"
@@ -90,23 +91,25 @@ def main():
 
     # Run test with high-priority long flow and low-priority short flow
     # Expect long flow to finish before short flow
-    h2.popen(flowReceiveCmd  % (1234, "recv_long1.txt"), shell=True)
-    h2.popen(flowReceiveCmd  % (1235, "recv_short1.txt"), shell=True)
+    recv_long = h2.popen(flowReceiveCmd  % (1234, "recv_long1.txt"), shell=True)
+    recv_short = h2.popen(flowReceiveCmd  % (1235, "recv_short1.txt"), shell=True)
     sleep(5)
     h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 1000, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_long1.txt"), shell=True)
     h1.popen(flowStartCmd % (h1.IP(), 1235, h2.IP(), 1235, 20, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_short1.txt"), shell=True)
-    for i in xrange(2*90):
-        sleep(0.5)
-        print ". "
+
+    recv_long.communicate()
+    recv_short.communicate()
 
     # Run test with low-priority long flow and high-priority short flow
     # Expect short flow to finish before long flow
-    #h2.popen(flowReceiveCmd  % (1236, "recv_long2.txt"), shell=True)
-    #h2.popen(flowReceiveCmd  % (1237, "recv_short2.txt"), shell=True)
-    #sleep(5)
-    #h1.popen(flowStartCmd % (h1.IP(), 1236, h2.IP(), 1236, 100, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_long2.txt"), shell=True)
-    #h1.popen(flowStartCmd % (h1.IP(), 1237, h2.IP(), 1237, 10, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_short2.txt"), shell=True)
-    #sleep(60)
+    recv_long = h2.popen(flowReceiveCmd  % (1236, "recv_long2.txt"), shell=True)
+    recv_short = h2.popen(flowReceiveCmd  % (1237, "recv_short2.txt"), shell=True)
+    sleep(5)
+    h1.popen(flowStartCmd % (h1.IP(), 1236, h2.IP(), 1236, 1000, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_long2.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1237, h2.IP(), 1237, 20, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_short2.txt"), shell=True)
+
+    recv_long.communicate()
+    recv_short.communicate()
 
     CLI(net)
     net.stop()

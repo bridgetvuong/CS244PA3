@@ -5,9 +5,9 @@
 from time import sleep, time, strftime
 import termcolor as T
 from argparse import ArgumentParser
-from scapy.all import *
 import socket
 import traceback
+import sys
 
 # Parse arguments
 parser = ArgumentParser(description="pFabric receiver")
@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 def main():
 
-    start = time.time()
+    start = time()
 
     print "HELLO!"
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -46,9 +46,10 @@ def main():
     conn.close()
     skt.close()
 
-    end = time.time()
+    end = time()
     print "END TIME: %.3f" % end
     print "Everything took %.3f seconds" % (end - start)
+    sys.stdout.flush()
 
 if __name__ == '__main__':
     try:

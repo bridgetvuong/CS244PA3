@@ -5,11 +5,11 @@
 from time import sleep, time
 import termcolor as T
 from argparse import ArgumentParser
-from scapy.all import *
 import socket
 import traceback
 import struct
 import math
+import sys
 
 # Parse arguments
 parser = ArgumentParser(description="Bufferbloat tests")
@@ -62,7 +62,7 @@ args = parser.parse_args()
 def main():
     "Create flow"
 
-    start = time.time()
+    start = time()
 
     print "START TIME: %.3f" % start
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -77,8 +77,9 @@ def main():
         pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
         skt.sendall(pkt)
     skt.close()
-    end = time.time()
+    end = time()
     print "Everything took %.3f seconds" % (end - start)
+    sys.stdout.flush()
 
 if __name__ == '__main__':
     try:
