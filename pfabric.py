@@ -178,11 +178,13 @@ def main():
 
     for load in [0.5]: #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         receivers = []
+        waitList = []
         for i in xrange(args.nflows):
             dest = hosts[random.randrange(NUM_HOSTS)]
             destPort = random.randrange(1025, 9999)
             receivers.append((dest, destPort))
-            dest.popen(flowReceiveCmd  % (destPort, "recv-%f-%d-%s.txt" % (load, i, dest.name)), shell=True)
+            waitElem = dest.popen(flowReceiveCmd  % (destPort, "recv-%f-%d-%s.txt" % (load, i, dest.name)), shell=True)
+            waitList.append(waitElem)
 
         sleep(5)
 
@@ -204,13 +206,11 @@ def main():
             print lambd, waitTime
             print "Waiting %f seconds before next flow..." % waitTime
             sleep(waitTime)
-        
-    for i in xrange(2*90):
-        sleep(0.5)
-        print ". ",
-        sys.stdout.flush()
 
-    CLI(net)
+        for waitElem in waitList:
+            waitElem.communicate()
+
+    #CLI(net)
     net.stop()
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
