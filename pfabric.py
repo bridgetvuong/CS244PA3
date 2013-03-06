@@ -22,6 +22,8 @@ import random
 import sys
 import os
 
+from ripl.ripl.dctopo import FatTreeTopo
+
 # Number of priorities supported
 NUM_PRIO_BANDS = 16
 NUM_HOSTS = 2
@@ -155,8 +157,8 @@ def main():
 
     start = time()
     # Reset to known state
-    topo = pFabricTopo()
-    setLogLevel('debug')
+    topo = FatTreeTopo(k=4)#pFabricTopo()
+    #setLogLevel('debug')
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
 
@@ -180,7 +182,7 @@ def main():
         receivers = []
         waitList = []
         for i in xrange(args.nflows):
-            dest = hosts[random.randrange(NUM_HOSTS)]
+            dest = hosts[0]#random.randrange(NUM_HOSTS)]
             destPort = random.randrange(1025, 9999)
             receivers.append((dest, destPort))
             waitElem = dest.popen(flowReceiveCmd  % (destPort, "recv-%f-%d-%s.txt" % (load, i, dest.name)), shell=True)
@@ -191,9 +193,9 @@ def main():
         for i in xrange(args.nflows):
 
             # generate random sender and receiver
-            src = hosts[random.randrange(NUM_HOSTS)]
+            src = hosts[1]#random.randrange(NUM_HOSTS)]
             srcPort = random.randrange(1025, 9999)
-            flowSize = getFlowSize()
+            flowSize = 3000#getFlowSize()
 
             dest = receivers[i][0]
             destPort = receivers[i][1]
