@@ -10,17 +10,16 @@ from mininet.log import lg, setLogLevel
 from mininet.util import dumpNodeConnections
 from mininet.cli import CLI
 
-import subprocess
-from subprocess import Popen, PIPE
-from time import sleep, time
-from multiprocessing import Process
-import termcolor as T
 from argparse import ArgumentParser
+from multiprocessing import Process
 from signal import SIGTERM
+from subprocess import call, Popen, PIPE
+from time import sleep, time
 
+import os
 import random
 import sys
-import os
+import termcolor
 
 from ripl.ripl.dctopo import FatTreeTopo
 
@@ -34,9 +33,9 @@ def cprint(s, color, cr=True):
        s: string to print
        color: color to use"""
     if cr:
-        print T.colored(s, color)
+        print termcolor.colored(s, color)
     else:
-        print T.colored(s, color),
+        print termcolor.colored(s, color),
 
 
 # Parse arguments
@@ -167,7 +166,7 @@ def main():
 
     # Configure TCP to use reno and disable advanced features
     tcpConfigCmd = "sudo ./%sConfig.sh" % args.tcp
-    subprocess.call(tcpConfigCmd, shell=True)
+    call(tcpConfigCmd, shell=True)
 
     # tcpdump at both hosts
     tcpdumpCmd = "sudo tcpdump -n -x > %s"
