@@ -77,7 +77,7 @@ def main():
     h2 = net.getNodeByName('h2')
 
     # Configure TCP to use reno and disable advanced features
-    tcpConfigCmd = "sudo ./tcpConfig.sh"
+    tcpConfigCmd = "sudo ./minTCPConfig.sh"
     subprocess.call(tcpConfigCmd, shell=True)
     print "TCP configured"
 
