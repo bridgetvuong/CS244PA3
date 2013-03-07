@@ -109,6 +109,9 @@ def main():
         print "Bad TCP argument."
         exit(1)
 
+    os.system("mkdir %s" % args.outputdir)
+    os.system("mkdir %s/%s" % (args.outputdir, args.tcp))
+
     start = time()
 
     # Initialize workload
