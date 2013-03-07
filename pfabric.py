@@ -127,7 +127,7 @@ def main():
     net.pingAll()
 
     # Configure TCP to use reno and disable advanced features
-    tcpConfigCmd = "sudo ./%sConfig.sh" % args.tcp
+    tcpConfigCmd = "sudo ./tcpconfig/%sConfig.sh" % args.tcp
     call(tcpConfigCmd, shell=True)
 
     # tcpdump at both hosts
@@ -182,7 +182,7 @@ def main():
     net.stop()
 
     # Reset to normal TCP
-    tcpConfigCmd = "sudo ./TCPConfig.sh"
+    tcpConfigCmd = "sudo ./tcpconfig/TCPConfig.sh"
     call(tcpConfigCmd, shell=True)
     print "TCP reset"
 
