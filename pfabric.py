@@ -55,7 +55,7 @@ parser.add_argument('--tcp',
 parser.add_argument('--bw',
                     help="link bandwidth in Mbps",
                     type=int,
-                    default=10000)
+                    default=1000)
 
 parser.add_argument('--delay',
                     help="end-to-end RT delay in us",
@@ -142,7 +142,7 @@ def main():
         waitList = []
         # Choose random receiver and start receiving
         for i in xrange(args.nflows):
-            dest = hosts[0]#random.randrange(args.nhosts)]
+            dest = hosts[random.randrange(NUM_HOSTS)]
             destPort = random.randrange(1025, 9999)
             receivers.append((dest, destPort))
             waitElem = dest.popen(flowReceiveCmd  % (destPort, PACKET_SIZE, "recv-%f-%d-%s.txt" % (load, i, dest.name)), shell=True)
@@ -153,7 +153,7 @@ def main():
         for i in xrange(args.nflows):
 
             # Choose random sender and flow size according to distribution
-            src = hosts[1]#random.randrange(args.nhosts)]
+            src = hosts[random.randrange(args.nhosts)]
             srcPort = random.randrange(1025, 9999)
             flowSize = 3000#workload.getFlowSize()
 
@@ -169,6 +169,7 @@ def main():
             waitTime = random.expovariate(lambd)
             print lambd
             print "Waiting %f seconds before next flow..." % waitTime
+            sys.stdout.flush()
             sleep(waitTime)
 
         for waitElem in waitList:

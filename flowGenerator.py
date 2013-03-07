@@ -72,7 +72,7 @@ def main():
         prio = args.priority
         if prio == None:
             packetsLeft = (args.num_packets - i)
-            prio = int(math.ceil(float(packetsLeft*args.num_bands)/args.max_packets))
+            prio = int(math.floor(math.log(packetsLeft + 1)/math.log(args.max_packets + 1)*args.num_bands))
         print prio
         pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
         skt.sendall(pkt)
