@@ -30,6 +30,7 @@ def main():
     start = time()
 
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     skt.bind(('', args.dest_port))
     skt.listen(1)
     conn, addr = skt.accept()
@@ -39,7 +40,6 @@ def main():
         if not data: break
         count += 1
         h = ['%02x' % ord(i) for i in data]
-        print '%s x %d' % (h[0], len(data))
     conn.close()
     skt.close()
 

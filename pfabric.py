@@ -25,7 +25,7 @@ from workload import Workload
 
 # Number of priorities supported
 NUM_PRIO_BANDS = 16
-PACKET_SIZE = 1500
+PACKET_SIZE = 150
 
 def cprint(s, color, cr=True):
     """Print in color
@@ -140,7 +140,7 @@ def main():
     flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%s/%%s/%%s" % (args.outputdir, args.tcp)
     flowStartCmd = "sudo python flowGenerator.py --src-ip %%s --src-port %%d --dest-ip %%s --dest-port %%d --num-packets %%d --num-bands %%d --max-packets %%d --packet-size %%d > %s/%s/%%.1f/%%s" % (args.outputdir, args.tcp)
 
-    for load in [0.5]: #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+    for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 
         receivers = []
@@ -160,7 +160,7 @@ def main():
             # Choose random sender and flow size according to distribution
             src = hosts[random.randrange(args.nhosts)]
             srcPort = random.randrange(1025, 9999)
-            flowSize = 3000#workload.getFlowSize()
+            flowSize = workload.getFlowSize()
 
             dest = receivers[i][0]
             destPort = receivers[i][1]

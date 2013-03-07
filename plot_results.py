@@ -1,23 +1,25 @@
 #!/usr/bin/env python
-from util.helper import *
-import glob
-import sys
-from collections import defaultdict
+from argparse import ArgumentParser
 
-parser = argparse.ArgumentParser()
+import glob
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import sys
+
+parser = ArgumentParser()
 parser.add_argument('-o', '--out',
                     help="Save plot to output file, e.g.: --out plot.png",
                     dest="out",
                     default=None)
 
 parser.add_argument('--dir',
-                    dest="dir",
                     help="Directory from which outputs of the sweep are read.",
                     required=True)
 
 parser.add_argument('--nflows',
-                    dest="nflows",
                     help="Number of flows per load",
+                    type=int,
                     required=True)
 
 args = parser.parse_args()
@@ -26,27 +28,30 @@ args = parser.parse_args()
 # line 2: time
 # return: (num packets, time)
 def parse_data(filename):
-    lines = open(filename).readLines()
+    lines = open(filename, 'r').readlines()
     return (int(lines[0]), float(lines[1]))
 
 # TODO: normalize flow completion times
 # map load to time
 loads = []
 avgCompletionTimes = []
-for loadName in glob.glob("%s/*"):
-    sumCompletionTimes = 0
+for loadDir in sorted(glob.glob("%s/*/" % args.dir)):
+    sumCompletionTimes = 0.0
     for flowNum in xrange(args.nflows):
         print "Parsing flow %d" % flowNum
-        sendFile = glob.glob("%s/%s/send-%d.txt" % (args.dir, loadName, flowNum))[0]
-        recvFile = glob.glob("%s/%s/recv-%d.txt" % (args.dir, loadName, flowNum))[0]
+        sendFile = "%ssend-%d.txt" % (loadDir, flowNum)
+        recvFile = "%srecv-%d.txt" % (loadDir, flowNum)
         (numSent, start) = parse_data(sendFile)
-        (numRecv, end) = parse_data(sendFile)
+        (numRecv, end) = parse_data(recvFile)
         sumCompletionTimes += (end-start)
-    loads.append(float(loadName))
+    load = str.split(loadDir, "/")
+    loads.append(float(load[len(load)-2]))
     avgCompletionTimes.append(sumCompletionTimes / args.nflows)
 
-plt.plot(loads, avgCompletionTimes, label="Average Flow Completion Times")
-#plt.legend()
+print loads
+print avgCompletionTimes
+plt.plot(loads, avgCompletionTimes, label="minTCP")
+plt.legend()
 plt.ylabel("Average Flow Completion Time")
 plt.xlabel("Load Level")
 
