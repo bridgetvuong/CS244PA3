@@ -40,10 +40,10 @@ def main():
         if not data: break
         count += 1
         h = ['%02x' % ord(i) for i in data]
+    end = time()
     conn.close()
     skt.close()
 
-    end = time()
     print count
     print "%.3f" % end
     sys.stdout.flush()

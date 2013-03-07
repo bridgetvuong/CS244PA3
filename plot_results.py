@@ -6,6 +6,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import sys
+import math
 
 parser = ArgumentParser()
 parser.add_argument('-o', '--out',
@@ -22,6 +23,21 @@ parser.add_argument('--nflows',
                     type=int,
                     required=True)
 
+parser.add_argument('--bw',
+                    help="link bandwidth in Mbps",
+                    type=int,
+                    default=1000)
+
+parser.add_argument('--delay',
+                    help="end-to-end RT delay in us",
+                    type=int,
+                    default=12)
+
+parser.add_argument('--packet-size',
+                    help="packet size in bytes",
+                    type=int,
+                    default=150)
+
 args = parser.parse_args()
 
 # line 1: number of packets sent or received
@@ -36,16 +52,20 @@ def parse_data(filename):
 loads = []
 avgCompletionTimes = []
 for loadDir in sorted(glob.glob("%s/*/" % args.dir)):
+    load = str.split(loadDir, "/")
+    loadNum = float(load[len(load)-2])
+    print "=== Load = %.3f ===" % loadNum
     sumCompletionTimes = 0.0
     for flowNum in xrange(args.nflows):
-        print "Parsing flow %d" % flowNum
         sendFile = "%ssend-%d.txt" % (loadDir, flowNum)
         recvFile = "%srecv-%d.txt" % (loadDir, flowNum)
         (numSent, start) = parse_data(sendFile)
         (numRecv, end) = parse_data(recvFile)
-        sumCompletionTimes += (end-start)
-    load = str.split(loadDir, "/")
-    loads.append(float(load[len(load)-2]))
+        #normalizedCompletionTime = math.log(numSent, 2) * args.delay / 1000000
+        bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000000
+        sumCompletionTimes += (end-start) / bestPossible
+        print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
+    loads.append(loadNum)
     avgCompletionTimes.append(sumCompletionTimes / args.nflows)
 
 print loads

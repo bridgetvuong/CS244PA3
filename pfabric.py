@@ -25,7 +25,6 @@ from workload import Workload
 
 # Number of priorities supported
 NUM_PRIO_BANDS = 16
-PACKET_SIZE = 150
 
 def cprint(s, color, cr=True):
     """Print in color
@@ -71,6 +70,11 @@ parser.add_argument('--nflows',
                     help="number of flows",
                     type=int,
                     default=1000)
+
+parser.add_argument('--packet-size',
+                    help="packet size in bytes",
+                    type=int,
+                    default=150)
 
 # Expt parameters
 args = parser.parse_args()
@@ -141,6 +145,7 @@ def main():
     flowStartCmd = "sudo python flowGenerator.py --src-ip %%s --src-port %%d --dest-ip %%s --dest-port %%d --num-packets %%d --num-bands %%d --max-packets %%d --packet-size %%d > %s/%s/%%.1f/%%s" % (args.outputdir, args.tcp)
 
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+        print "===== Starting load level %f" % load
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 
         receivers = []
@@ -150,7 +155,7 @@ def main():
             dest = hosts[random.randrange(args.nhosts)]
             destPort = random.randrange(1025, 9999)
             receivers.append((dest, destPort))
-            waitElem = dest.popen(flowReceiveCmd  % (destPort, PACKET_SIZE, load, "recv-%d.txt" % (i)), shell=True)
+            waitElem = dest.popen(flowReceiveCmd  % (destPort, args.packet_size, load, "recv-%d.txt" % (i)), shell=True)
             waitList.append(waitElem)
 
         sleep(5)
@@ -167,10 +172,10 @@ def main():
 
             print "Sending %d packets from %s:%d to %s:%d" % (flowSize, src.name, srcPort, dest.name, destPort)
             src.popen(flowStartCmd % (src.IP(), srcPort, dest.IP(), destPort, flowSize, NUM_PRIO_BANDS,
-                                      workload.getMaxFlowSize(), PACKET_SIZE, load, "send-%d.txt" % (i)), shell=True)
+                                      workload.getMaxFlowSize(), args.packet_size, load, "send-%d.txt" % (i)), shell=True)
 
             # Lambda is arrival rate = load*capacity converted to flows/s
-            lambd = load * args.bw * 1000000 / 8 / PACKET_SIZE / workload.getAverageFlowSize()
+            lambd = load * args.bw * 1000000 / 8 / args.packet_size / workload.getAverageFlowSize()
             waitTime = random.expovariate(lambd)
             print lambd
             print "Waiting %f seconds before next flow..." % waitTime

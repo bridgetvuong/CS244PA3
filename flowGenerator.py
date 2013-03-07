@@ -62,14 +62,13 @@ args = parser.parse_args()
 def main():
     "Create flow"
 
-    start = time()
-
     print args.num_packets
-    print "%.3f" % start
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
+    start = time()
+    print "%f" % start
     for i in xrange(args.num_packets):
         prio = args.priority
         if prio == None:
@@ -79,6 +78,7 @@ def main():
         skt.sendall(pkt)
     skt.close()
     end = time()
+    print "%f" % end
     sys.stdout.flush()
 
 if __name__ == '__main__':
