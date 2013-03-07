@@ -113,6 +113,12 @@ def main():
 
     CLI(net)
     net.stop()
+
+    # Reset to normal TCP
+    tcpConfigCmd = "sudo ./TCPConfig.sh"
+    subprocess.call(tcpConfigCmd, shell=True)
+    print "TCP reset"
+
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
 

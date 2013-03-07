@@ -21,11 +21,10 @@ import random
 import sys
 import termcolor
 
-from ripl.ripl.dctopo import FatTreeTopo
+from workload import Workload
 
 # Number of priorities supported
 NUM_PRIO_BANDS = 16
-NUM_HOSTS = 2
 PACKET_SIZE = 1500
 
 def cprint(s, color, cr=True):
@@ -41,8 +40,12 @@ def cprint(s, color, cr=True):
 # Parse arguments
 parser = ArgumentParser(description="pFabric tests")
 
+parser.add_argument('--outputdir',
+                    help="output directory",
+                    required=True)
+
 parser.add_argument('--workload',
-                    help="'data mining' or 'web search'",
+                    help="workload distribution file",
                     required=True)
 
 parser.add_argument('--tcp',
@@ -58,6 +61,11 @@ parser.add_argument('--delay',
                     help="end-to-end RT delay in us",
                     type=int,
                     default=12)
+
+parser.add_argument('--nhosts',
+                    help="number of hosts",
+                    type=int,
+                    default=2)
 
 parser.add_argument('--nflows',
                     help="number of flows",
@@ -77,7 +85,7 @@ class pFabricTopo(Topo):
 
         # create hosts
         global hostNames
-        hostNames = [self.addHost('h%d' % i) for i in xrange(NUM_HOSTS)]
+        hostNames = [self.addHost('h%d' % i) for i in xrange(n)]
 
         # Here I have created a switch.  If you change its name, its
         # interface names will change from s0-eth1 to newname-eth1.
@@ -91,58 +99,8 @@ class pFabricTopo(Topo):
             linkOptions['use_prio'] = True
             linkOptions['num_bands'] = NUM_PRIO_BANDS
 
-        for i in xrange(NUM_HOSTS):
+        for i in xrange(n):
             self.addLink(hostNames[i], switch, **linkOptions)
-
-webSearchWorkload = [
-    (0.15, 6),
-    (0.2, 13),
-    (0.3, 19),
-    (0.4, 33),
-    (0.53, 53),
-    (0.6, 133),
-    (0.7, 667),
-    (0.8, 1333),
-    (0.9, 3333),
-    (0.97, 6667),
-    (1, 20000)
-]
-
-dataMiningWorkload = [
-    (0.5, 1),
-    (0.6, 2),
-    (0.7, 3),
-    (0.8, 7),
-    (0.9, 267),
-    (0.95, 2107),
-    (0.99, 66667),
-    (1, 666667)
-]
-
-averageWebSearchFlowSize = sum([s[0]*s[1] for s in webSearchWorkload])
-averageDataMiningFlowSize = sum([s[0]*s[1] for s in dataMiningWorkload])
-
-def getMaxFlowSize():
-    if args.workload == "web search":
-        return 20000
-    else:
-        return 666667
-
-def getAverageFlowSize():
-    if args.workload == "web search":
-        return averageWebSearchFlowSize
-    else:
-        return averageDataMiningFlowSize
-
-def getFlowSize():
-    ind = random.random()
-    if args.workload == "web search":
-        dist = webSearchWorkload
-    else:
-        dist = dataMiningWorkload
-    for s in dist:
-        if ind <= s[0]:
-            return s[1]
 
 def main():
     "Create network and run pFabric experiment"
@@ -150,13 +108,14 @@ def main():
     if args.tcp != 'minTCP' and args.tcp != 'TCP':
         print "Bad TCP argument."
         exit(1)
-    if args.workload != 'web search' and args.workload != 'data mining':
-        print "Bad workload argument."
-        exit(1)
 
     start = time()
+
+    # Initialize workload
+    workload  = Workload(args.workload)
+
     # Reset to known state
-    topo = FatTreeTopo(k=4)#pFabricTopo()
+    topo = pFabricTopo(args.nhosts)
     #setLogLevel('debug')
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
@@ -170,41 +129,45 @@ def main():
 
     # tcpdump at both hosts
     tcpdumpCmd = "sudo tcpdump -n -x > %s"
-    hosts = [net.getNodeByName(hostName) for hostName in hostNames]
+    hosts = net.hosts#[net.getNodeByName(hostName) for hostName in hostNames]
     for host in hosts:
         host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)
 
-    flowReceiveCmd = "sudo python flowReceiver.py --dest-port %d > %s"
-    flowStartCmd = "sudo python flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d > %s"
+    # Send flows
+    flowReceiveCmd = "sudo python flowReceiver.py --dest-port %d --packet-size %d > %s/%s"
+    flowStartCmd = "sudo python flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d > %s/%s"
 
     for load in [0.5]: #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         receivers = []
         waitList = []
+        # Choose random receiver and start receiving
         for i in xrange(args.nflows):
-            dest = hosts[0]#random.randrange(NUM_HOSTS)]
+            dest = hosts[0]#random.randrange(args.nhosts)]
             destPort = random.randrange(1025, 9999)
             receivers.append((dest, destPort))
-            waitElem = dest.popen(flowReceiveCmd  % (destPort, "recv-%f-%d-%s.txt" % (load, i, dest.name)), shell=True)
+            waitElem = dest.popen(flowReceiveCmd  % (destPort, PACKET_SIZE, args.outputdir, "recv-%f-%d-%s.txt" % (load, i, dest.name)), shell=True)
             waitList.append(waitElem)
 
         sleep(5)
 
         for i in xrange(args.nflows):
 
-            # generate random sender and receiver
-            src = hosts[1]#random.randrange(NUM_HOSTS)]
+            # Choose random sender and flow size according to distribution
+            src = hosts[1]#random.randrange(args.nhosts)]
             srcPort = random.randrange(1025, 9999)
-            flowSize = 3000#getFlowSize()
+            flowSize = 3000#workload.getFlowSize()
 
             dest = receivers[i][0]
             destPort = receivers[i][1]
 
             print "Sending %d packets from %s:%d to %s:%d" % (flowSize, src.name, srcPort, dest.name, destPort)
-            src.popen(flowStartCmd % (src.IP(), srcPort, dest.IP(), destPort, flowSize, NUM_PRIO_BANDS, getMaxFlowSize(), "send-%f-%d-%s.txt" % (load, i, src.name)), shell=True)
+            src.popen(flowStartCmd % (src.IP(), srcPort, dest.IP(), destPort, flowSize, NUM_PRIO_BANDS,
+                                      workload.getMaxFlowSize(), PACKET_SIZE, args.outputdir, "send-%f-%d-%s.txt" % (load, i, src.name)), shell=True)
 
-            lambd = args.bw * 1000000 / 8 * load / getAverageFlowSize() / PACKET_SIZE
+            # Lambda is arrival rate = load*capacity converted to flows/s
+            lambd = load * args.bw * 1000000 / 8 / PACKET_SIZE / workload.getAverageFlowSize()
             waitTime = random.expovariate(lambd)
-            print lambd, waitTime
+            print lambd
             print "Waiting %f seconds before next flow..." % waitTime
             sleep(waitTime)
 
@@ -213,6 +176,12 @@ def main():
 
     #CLI(net)
     net.stop()
+
+    # Reset to normal TCP
+    tcpConfigCmd = "sudo ./TCPConfig.sh"
+    call(tcpConfigCmd, shell=True)
+    print "TCP reset"
+
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
 
