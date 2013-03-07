@@ -29,12 +29,10 @@ def main():
 
     start = time()
 
-    print "HELLO!"
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.bind(('', args.dest_port))
     skt.listen(1)
     conn, addr = skt.accept()
-    print "CONNECTION ACCEPTED!"
     count = 0
     while 1:
         data = conn.recv(args.packet_size - 52) # 52 is IP and TCP header sizes
@@ -42,13 +40,12 @@ def main():
         count += 1
         h = ['%02x' % ord(i) for i in data]
         print '%s x %d' % (h[0], len(data))
-    print "Received %d packets" % (count)
     conn.close()
     skt.close()
 
     end = time()
-    print "END TIME: %.3f" % end
-    print "Everything took %.3f seconds" % (end - start)
+    print count
+    print "%.3f" % end
     sys.stdout.flush()
 
 if __name__ == '__main__':

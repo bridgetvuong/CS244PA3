@@ -132,23 +132,25 @@ def main():
 
     # tcpdump at both hosts
     tcpdumpCmd = "sudo tcpdump -n -x > %s/%s/%%s" % (args.outputdir, args.tcp)
-    hosts = net.hosts#[net.getNodeByName(hostName) for hostName in hostNames]
+    hosts = net.hosts
     for host in hosts:
         host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)
 
     # Send flows
-    flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%s/%%s" % (args.outputdir, args.tcp)
-    flowStartCmd = "sudo python flowGenerator.py --src-ip %%s --src-port %%d --dest-ip %%s --dest-port %%d --num-packets %%d --num-bands %%d --max-packets %%d --packet-size %%d > %s/%s/%%s" % (args.outputdir, args.tcp)
+    flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%s/%%s/%%s" % (args.outputdir, args.tcp)
+    flowStartCmd = "sudo python flowGenerator.py --src-ip %%s --src-port %%d --dest-ip %%s --dest-port %%d --num-packets %%d --num-bands %%d --max-packets %%d --packet-size %%d > %s/%s/%%.1f/%%s" % (args.outputdir, args.tcp)
 
     for load in [0.5]: #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+        os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
+
         receivers = []
         waitList = []
         # Choose random receiver and start receiving
         for i in xrange(args.nflows):
-            dest = hosts[random.randrange(NUM_HOSTS)]
+            dest = hosts[random.randrange(args.nhosts)]
             destPort = random.randrange(1025, 9999)
             receivers.append((dest, destPort))
-            waitElem = dest.popen(flowReceiveCmd  % (destPort, PACKET_SIZE, "recv-%f-%d-%s.txt" % (load, i, dest.name)), shell=True)
+            waitElem = dest.popen(flowReceiveCmd  % (destPort, PACKET_SIZE, load, "recv-%d.txt" % (i)), shell=True)
             waitList.append(waitElem)
 
         sleep(5)
@@ -165,7 +167,7 @@ def main():
 
             print "Sending %d packets from %s:%d to %s:%d" % (flowSize, src.name, srcPort, dest.name, destPort)
             src.popen(flowStartCmd % (src.IP(), srcPort, dest.IP(), destPort, flowSize, NUM_PRIO_BANDS,
-                                      workload.getMaxFlowSize(), PACKET_SIZE, "send-%f-%d-%s.txt" % (load, i, src.name)), shell=True)
+                                      workload.getMaxFlowSize(), PACKET_SIZE, load, "send-%d.txt" % (i)), shell=True)
 
             # Lambda is arrival rate = load*capacity converted to flows/s
             lambd = load * args.bw * 1000000 / 8 / PACKET_SIZE / workload.getAverageFlowSize()

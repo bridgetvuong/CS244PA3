@@ -64,7 +64,8 @@ def main():
 
     start = time()
 
-    print "START TIME: %.3f" % start
+    print args.num_packets
+    print "%.3f" % start
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
@@ -78,7 +79,6 @@ def main():
         skt.sendall(pkt)
     skt.close()
     end = time()
-    print "Everything took %.3f seconds" % (end - start)
     sys.stdout.flush()
 
 if __name__ == '__main__':
