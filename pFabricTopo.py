@@ -15,7 +15,7 @@ class pFabricTopo(Topo):
         switch = self.addSwitch('s0')
 
         # Add links with appropriate characteristics
-        linkOptions = {'bw': bw, 'delay': '%dus' % (delay/4), 'max_queue_size': 150}
+        linkOptions = {'bw': bw, 'delay': '%dms' % (delay/4), 'max_queue_size': 150}
         if usepFabric:
             linkOptions['max_queue_size'] = 15
             linkOptions['use_prio'] = True

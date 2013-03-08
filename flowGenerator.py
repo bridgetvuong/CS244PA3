@@ -67,6 +67,7 @@ def main():
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
+    pkt = ('%02x' % 0).decode('hex')*(args.packet_size-52-1)
     start = time()
     print "%f" % start
     for i in xrange(args.num_packets):
@@ -74,8 +75,8 @@ def main():
         if prio == None:
             packetsLeft = (args.num_packets - i)
             prio = int(math.floor(math.log(packetsLeft + 1)/math.log(args.max_packets + 1)*args.num_bands))
-        pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
-        skt.sendall(pkt)
+        sendPkt = ('%02x' % prio).decode('hex') + pkt
+        skt.sendall(sendPkt)
     skt.close()
     end = time()
     print "%f" % end

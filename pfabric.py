@@ -58,7 +58,7 @@ parser.add_argument('--bw',
                     default=1000)
 
 parser.add_argument('--delay',
-                    help="end-to-end RT delay in us",
+                    help="end-to-end RT delay in ms",
                     type=int,
                     default=12)
 
@@ -128,7 +128,7 @@ def main():
 
     portNum = 1025
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-        random.seed(1234567)
+        random.seed(1234568)
         print "===== Starting load level %f" % load
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 

@@ -94,8 +94,8 @@ def main():
     recv_long = h2.popen(flowReceiveCmd  % (1234, "recv_long1.txt"), shell=True)
     recv_short = h2.popen(flowReceiveCmd  % (1235, "recv_short1.txt"), shell=True)
     sleep(5)
-    h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 1000, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_long1.txt"), shell=True)
-    h1.popen(flowStartCmd % (h1.IP(), 1235, h2.IP(), 1235, 20, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_short1.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1234, h2.IP(), 1234, 10, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_long1.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1235, h2.IP(), 1235, 1, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_short1.txt"), shell=True)
 
     recv_long.communicate()
     recv_short.communicate()
@@ -105,8 +105,8 @@ def main():
     recv_long = h2.popen(flowReceiveCmd  % (1236, "recv_long2.txt"), shell=True)
     recv_short = h2.popen(flowReceiveCmd  % (1237, "recv_short2.txt"), shell=True)
     sleep(5)
-    h1.popen(flowStartCmd % (h1.IP(), 1236, h2.IP(), 1236, 1000, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_long2.txt"), shell=True)
-    h1.popen(flowStartCmd % (h1.IP(), 1237, h2.IP(), 1237, 20, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_short2.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1236, h2.IP(), 1236, 10, NUM_PRIO_BANDS, MAX_PACKETS, 16, "send_long2.txt"), shell=True)
+    h1.popen(flowStartCmd % (h1.IP(), 1237, h2.IP(), 1237, 1, NUM_PRIO_BANDS, MAX_PACKETS, 1, "send_short2.txt"), shell=True)
 
     recv_long.communicate()
     recv_short.communicate()
