@@ -119,18 +119,18 @@ def main():
     # tcpdump at both hosts
     tcpdumpCmd = "sudo tcpdump -n -x > %s/%s/%%s" % (args.outputdir, args.tcp)
     hosts = net.hosts
-    for host in hosts:
-        host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)
+#    for host in hosts:
+#        host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)
 
     # Send flows
     flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%s/%%s/%%s" % (args.outputdir, args.tcp)
     flowStartCmd = "sudo python flowGenerator.py --src-ip %%s --src-port %%d --dest-ip %%s --dest-port %%d --num-packets %%d --num-bands %%d --max-packets %%d --packet-size %%d > %s/%s/%%.1f/%%s" % (args.outputdir, args.tcp)
 
-    portNum = 1025
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         random.seed(1234568)
-        print "===== Starting load level %f" % load
+        print "===== Starting load level %.1f" % load
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
+        portNum = 1025
 
         receivers = []
         waitList = []

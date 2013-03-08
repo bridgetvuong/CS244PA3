@@ -24,26 +24,28 @@ parser.add_argument('--packet-size',
 
 # Expt parameters
 args = parser.parse_args()
+skt = None
 
 def main():
 
-    start = time()
-
+    # Create socket
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     skt.bind(('', args.dest_port))
     skt.listen(1)
     conn, addr = skt.accept()
+
+    # Receive packets
     count = 0
     while 1:
         data = conn.recv(args.packet_size - 52) # 52 is IP and TCP header sizes
         if not data: break
         count += 1
-        h = ['%02x' % ord(i) for i in data]
     end = time()
     conn.close()
     skt.close()
 
+    # Print stats
     print count
     print "%f" % end
     sys.stdout.flush()
@@ -52,6 +54,8 @@ if __name__ == '__main__':
     try:
         main()
     except:
+        if skt:
+            skt.close()
         print "-"*80
         print "Caught exception.  Cleaning up..."
         print "-"*80

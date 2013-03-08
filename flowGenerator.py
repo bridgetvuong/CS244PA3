@@ -58,34 +58,43 @@ parser.add_argument('--packet-size',
 
 # Expt parameters
 args = parser.parse_args()
+skt = None
 
 def main():
     "Create flow"
+    pkts = []
+    pkt = ('%02x' % 0).decode('hex')*(args.packet_size-52-1)
+    for prio in range(1, 17):
+        pkts.append(('%02x' % prio).decode('hex') + pkt)
 
-    print args.num_packets
+    # Create socket
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
-    pkt = ('%02x' % 0).decode('hex')*(args.packet_size-52-1)
-    start = time()
-    print "%f" % start
+
+    # Print stats
+    print args.num_packets
+    print "%f" % time()
+
+    # Send packets
     for i in xrange(args.num_packets):
         prio = args.priority
         if prio == None:
             packetsLeft = (args.num_packets - i)
             prio = int(math.floor(math.log(packetsLeft + 1)/math.log(args.max_packets + 1)*args.num_bands))
-        sendPkt = ('%02x' % prio).decode('hex') + pkt
-        skt.sendall(sendPkt)
+        #pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
+        #sendPkt = ('%02x' % prio).decode('hex') + pkt
+        skt.sendall(pkts[prio-1])
     skt.close()
-    end = time()
-    print "%f" % end
     sys.stdout.flush()
 
 if __name__ == '__main__':
     try:
         main()
     except:
+        if skt:
+            skt.close()
         print "-"*80
         print "Caught exception.  Cleaning up..."
         print "-"*80

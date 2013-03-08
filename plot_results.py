@@ -10,7 +10,7 @@ import math
 
 BITS_PER_MEGABIT = 1000000
 BITS_PER_BYTE = 8
-MICROSECS_PER_SEC = 1000000
+MILLISECS_PER_SEC = 1000
 
 parser = ArgumentParser()
 parser.add_argument('-o', '--out',
@@ -48,6 +48,8 @@ args = parser.parse_args()
 # return: (num packets, time)
 def parse_data(filename):
     lines = open(filename, 'r').readlines()
+    if not (len(lines) == 2 or len(lines) == 3):
+        return (None, None)
     if len(lines) == 2:
         return (int(lines[0]), float(lines[1]))
     else:
@@ -80,18 +82,25 @@ for flowSizeDir in sorted(glob.glob("%s/*/" % args.refdir)):
 for typeDir in sorted(glob.glob("%s/*/" % args.dir)): 
     typeName = typeDir.split('/')[-2]
     print typeName
+
     loads = []
     avgCompletionTimes = []
     for loadDir in sorted(glob.glob("%s/*/" % typeDir)):
         load = str.split(loadDir, "/")
         loadNum = float(load[len(load)-2])
         print "=== Load = %.3f ===" % loadNum
+
         completionTimes = []
         sumCompletionTimes = 0.0
         nFlows = len(glob.glob("%ssend-*.txt" % loadDir))
+        numGoodFlows = 0
         for sendFile in glob.glob("%ssend-*.txt" % loadDir):
             #recvFile = "%srecv-%d.txt" % (loadDir, flowNum)
             (numSent, start, end1) = parse_data(sendFile)
+            if numSent == None:
+                # Error occured. Skip this data point
+                continue
+            numGoodFlows += 1
             #normalizedCompletionTime = math.log(numSent, 2) * args.delay / 1000000
             #bestPossibleRate = float(args.packet_size) / (float(args.delay) / 1000)
             #bestPossible = float(numSent) * float(args.packet_size) / bestPossibleRate
