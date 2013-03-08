@@ -8,6 +8,10 @@ import matplotlib.pyplot as plt
 import sys
 import math
 
+BITS_PER_MEGABIT = 1000000
+BITS_PER_BYTE = 8
+MICROSECS_PER_SEC = 1000000
+
 parser = ArgumentParser()
 parser.add_argument('-o', '--out',
                     help="Save plot to output file, e.g.: --out plot.png",
@@ -36,7 +40,7 @@ parser.add_argument('--delay',
 parser.add_argument('--packet-size',
                     help="packet size in bytes",
                     type=int,
-                    default=150)
+                    default=1500)
 
 args = parser.parse_args()
 
@@ -62,11 +66,11 @@ for loadDir in sorted(glob.glob("%s/*/" % args.dir)):
         (numSent, start) = parse_data(sendFile)
         (numRecv, end) = parse_data(recvFile)
         #normalizedCompletionTime = math.log(numSent, 2) * args.delay / 1000000
-        bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000000
+        bestPossible = float(numSent) * args.packet_size / (args.bw * BITS_PER_MEGABIT / BITS_PER_BYTE) + float(args.delay) / 2 / MICROSECS_PER_SEC
         sumCompletionTimes += (end-start) / bestPossible
         print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
     loads.append(loadNum)
-    avgCompletionTimes.append(sumCompletionTimes / args.nflows)
+    avgCompletionTimes.append(sumCompletionTimes / float(args.nflows))
 
 print loads
 print avgCompletionTimes

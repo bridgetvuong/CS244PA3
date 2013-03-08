@@ -45,7 +45,7 @@ def main():
     skt.close()
 
     print count
-    print "%.3f" % end
+    print "%f" % end
     sys.stdout.flush()
 
 if __name__ == '__main__':

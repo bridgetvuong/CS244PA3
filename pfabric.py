@@ -74,7 +74,7 @@ parser.add_argument('--nflows',
 parser.add_argument('--packet-size',
                     help="packet size in bytes",
                     type=int,
-                    default=150)
+                    default=1500)
 
 # Expt parameters
 args = parser.parse_args()
