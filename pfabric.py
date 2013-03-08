@@ -22,6 +22,7 @@ import sys
 import termcolor
 
 from workload import Workload
+from pFabricTopo import pFabricTopo
 
 # Number of priorities supported
 NUM_PRIO_BANDS = 16
@@ -76,35 +77,15 @@ parser.add_argument('--packet-size',
                     type=int,
                     default=150)
 
+parser.add_argument('--flow-size',
+                    help="flow size in packets",
+                    type=int,
+                    default=None)
+
 # Expt parameters
 args = parser.parse_args()
 
 hostNames = []
-
-class pFabricTopo(Topo):
-    "Simple topology for pFabric experiment."
-
-    def __init__(self, n=2):
-        super(pFabricTopo, self).__init__()
-
-        # create hosts
-        global hostNames
-        hostNames = [self.addHost('h%d' % i) for i in xrange(n)]
-
-        # Here I have created a switch.  If you change its name, its
-        # interface names will change from s0-eth1 to newname-eth1.
-        switch = self.addSwitch('s0')
-
-        usepFabric = (args.tcp == 'minTCP')
-        # Add links with appropriate characteristics
-        linkOptions = {'bw': args.bw, 'delay': '%dus' % (args.delay/4), 'max_queue_size': 150}
-        if usepFabric:
-            linkOptions['max_queue_size'] = 15
-            linkOptions['use_prio'] = True
-            linkOptions['num_bands'] = NUM_PRIO_BANDS
-
-        for i in xrange(n):
-            self.addLink(hostNames[i], switch, **linkOptions)
 
 def main():
     "Create network and run pFabric experiment"
@@ -122,7 +103,8 @@ def main():
     workload  = Workload(args.workload)
 
     # Reset to known state
-    topo = pFabricTopo(args.nhosts)
+    usePFabric = (args.tcp == "minTCP")
+    topo = pFabricTopo(n=args.nhosts, bw=args.bw, delay=args.delay, usepFabric=usePFabric, numPrioBands=NUM_PRIO_BANDS)
     #setLogLevel('debug')
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
@@ -144,7 +126,9 @@ def main():
     flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%s/%%s/%%s" % (args.outputdir, args.tcp)
     flowStartCmd = "sudo python flowGenerator.py --src-ip %%s --src-port %%d --dest-ip %%s --dest-port %%d --num-packets %%d --num-bands %%d --max-packets %%d --packet-size %%d > %s/%s/%%.1f/%%s" % (args.outputdir, args.tcp)
 
+    portNum = 1025
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+        random.seed(1234567)
         print "===== Starting load level %f" % load
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 
@@ -153,7 +137,8 @@ def main():
         # Choose random receiver and start receiving
         for i in xrange(args.nflows):
             dest = hosts[random.randrange(args.nhosts)]
-            destPort = random.randrange(1025, 9999)
+            destPort = portNum#random.randrange(1025, 9999)
+            portNum += 1
             receivers.append((dest, destPort))
             waitElem = dest.popen(flowReceiveCmd  % (destPort, args.packet_size, load, "recv-%d.txt" % (i)), shell=True)
             waitList.append(waitElem)
@@ -164,21 +149,25 @@ def main():
 
             # Choose random sender and flow size according to distribution
             src = hosts[random.randrange(args.nhosts)]
-            srcPort = random.randrange(1025, 9999)
-            flowSize = workload.getFlowSize()
+            srcPort = portNum
+            portNum += 1#random.randrange(1025, 9999)
+            if args.flow_size is not None:
+                flowSize = args.flow_size
+            else:
+                flowSize = workload.getFlowSize()
 
             dest = receivers[i][0]
             destPort = receivers[i][1]
 
-            print "Sending %d packets from %s:%d to %s:%d" % (flowSize, src.name, srcPort, dest.name, destPort)
+            print "   Sending %d packets from %s:%d to %s:%d" % (flowSize, src.name, srcPort, dest.name, destPort)
             src.popen(flowStartCmd % (src.IP(), srcPort, dest.IP(), destPort, flowSize, NUM_PRIO_BANDS,
                                       workload.getMaxFlowSize(), args.packet_size, load, "send-%d.txt" % (i)), shell=True)
 
             # Lambda is arrival rate = load*capacity converted to flows/s
             lambd = load * args.bw * 1000000 / 8 / args.packet_size / workload.getAverageFlowSize()
             waitTime = random.expovariate(lambd)
-            print lambd
-            print "Waiting %f seconds before next flow..." % waitTime
+            #print lambd
+            #print "Waiting %f seconds before next flow..." % waitTime
             sys.stdout.flush()
             sleep(waitTime)
 

@@ -16,6 +16,9 @@ class Workload():
     def getAverageFlowSize(self):
         return sum([s[0]*s[1] for s in self.dist])
 
+    def getAllFlowSizes(self):
+        return [s[1] for s in self.dist]
+
     def getFlowSize(self):
             ind = random.random()
             for s in self.dist:

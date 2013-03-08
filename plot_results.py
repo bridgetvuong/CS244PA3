@@ -18,9 +18,8 @@ parser.add_argument('--dir',
                     help="Directory from which outputs of the sweep are read.",
                     required=True)
 
-parser.add_argument('--nflows',
-                    help="Number of flows per load",
-                    type=int,
+parser.add_argument('--refdir',
+                    help="Directory from which reference outputs of the sweep are read.",
                     required=True)
 
 parser.add_argument('--bw',
@@ -45,7 +44,36 @@ args = parser.parse_args()
 # return: (num packets, time)
 def parse_data(filename):
     lines = open(filename, 'r').readlines()
-    return (int(lines[0]), float(lines[1]))
+    if len(lines) == 2:
+        return (int(lines[0]), float(lines[1]))
+    else:
+        return (int(lines[0]), float(lines[1]), float(lines[2]))
+
+# TODO: normalize flow completion times
+# map load to time
+avgBestCompletionTimes = {}
+for flowSizeDir in sorted(glob.glob("%s/*/" % args.refdir)):
+    flowSize = int(str.split(flowSizeDir, "/")[-2])
+    print "=== flowSize = %s ===" % flowSize
+    sumCompletionTimes = 0.0
+    minBestCompletionTimes = -1
+    maxBestCompletionTimes = -1
+    numTrials = len(glob.glob("%ssend-*.txt" % flowSizeDir))
+    for flowNum in xrange(numTrials):
+        sendFile = "%ssend-%d.txt" % (flowSizeDir, flowNum)
+        recvFile = "%srecv-%d.txt" % (flowSizeDir, flowNum)
+        (numSent, start, end1) = parse_data(sendFile)
+        (numRecv, end) = parse_data(recvFile)
+        bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000
+        completionTime = end1-start
+        sumCompletionTimes += completionTime
+        if minBestCompletionTimes < 0 or completionTime < minBestCompletionTimes:
+            minBestCompletionTimes = completionTime
+        if maxBestCompletionTimes < 0 or completionTime > maxBestCompletionTimes:
+            maxBestCompletionTimes = completionTime
+        print "IDEAL: Flow of size %d took %f to complete" % (numSent, (end1-start))
+        #print "=== best possible rate: %f" % (bestPossible)
+    avgBestCompletionTimes[flowSize] = (sumCompletionTimes-minBestCompletionTimes-maxBestCompletionTimes) / (numTrials-2)
 
 # TODO: normalize flow completion times
 # map load to time
@@ -56,17 +84,22 @@ for loadDir in sorted(glob.glob("%s/*/" % args.dir)):
     loadNum = float(load[len(load)-2])
     print "=== Load = %.3f ===" % loadNum
     sumCompletionTimes = 0.0
-    for flowNum in xrange(args.nflows):
+    nFlows = len(glob.glob("%ssend-*.txt" % loadDir))
+    for flowNum in xrange(nFlows):
         sendFile = "%ssend-%d.txt" % (loadDir, flowNum)
         recvFile = "%srecv-%d.txt" % (loadDir, flowNum)
-        (numSent, start) = parse_data(sendFile)
+        (numSent, start, end1) = parse_data(sendFile)
         (numRecv, end) = parse_data(recvFile)
         #normalizedCompletionTime = math.log(numSent, 2) * args.delay / 1000000
-        bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000000
-        sumCompletionTimes += (end-start) / bestPossible
-        print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
+        #bestPossibleRate = float(args.packet_size) / (float(args.delay) / 1000)
+        #bestPossible = float(numSent) * float(args.packet_size) / bestPossibleRate
+        #bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000
+        bestPossible = avgBestCompletionTimes[numSent]
+        sumCompletionTimes += (end1-start) / bestPossible
+        print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end1-start), bestPossible)
+        #print "=== best possible rate: %f" % (bestPossible)
     loads.append(loadNum)
-    avgCompletionTimes.append(sumCompletionTimes / args.nflows)
+    avgCompletionTimes.append(sumCompletionTimes / nFlows)
 
 print loads
 print avgCompletionTimes
