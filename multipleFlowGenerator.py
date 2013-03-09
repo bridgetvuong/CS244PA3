@@ -80,30 +80,30 @@ def readReceivers():
 
 def main():
     "Create flows"
-    print "HI"
     sys.stdout.flush()
 
     # Initialize workload
     workload  = Workload(args.workload)
     receivers = readReceivers()
 
-    srcPort = 3000
-    start = time()
-    print "STARTING AT TIME %f" % start
+    flowStartCmd = "sudo python ./flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d > %s/send-%s-%i.txt"
+
+    print "STARTING AT TIME %f" % time()
+    srcPort = 5000
     for i in xrange(args.nflows):
         # get random receiver
         (dest_ip, dest_port) = receivers[i]
         numPackets = workload.getFlowSize()
 
-        Popen("sudo python ./flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d > %s/send-%s-%i.txt" % (args.src_ip, srcPort + i, dest_ip, dest_port, numPackets, args.num_bands, workload.getMaxFlowSize(), args.packet_size, args.output_dir, args.src_ip, i), shell=True)
+        Popen(flowStartCmd % (args.src_ip, srcPort + i, dest_ip, dest_port, numPackets, args.num_bands, 
+                              workload.getMaxFlowSize(), args.packet_size, args.output_dir, args.src_ip, i), shell=True)
 
         lambd = args.load * args.bw * 1000000 / 8 / args.packet_size / workload.getAverageFlowSize()
         waitTime = random.expovariate(lambd)
         print "Sleeping for %f seconds..." % waitTime
         sys.stdout.flush()
         sleep(waitTime)
-    end = time()
-    print "ENDING AT TIME %f" % end
+    print "ENDING AT TIME %f" % time()
 
 if __name__ == '__main__':
     try:
