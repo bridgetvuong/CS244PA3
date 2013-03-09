@@ -7,6 +7,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import sys
 import math
+import string
 
 BITS_PER_MEGABIT = 1000000
 BITS_PER_BYTE = 8
@@ -29,12 +30,12 @@ parser.add_argument('--refdir',
 parser.add_argument('--bw',
                     help="link bandwidth in Mbps",
                     type=int,
-                    default=1000)
+                    default=100)
 
 parser.add_argument('--delay',
                     help="end-to-end RT delay in ms",
                     type=int,
-                    default=12)
+                    default=0)
 
 parser.add_argument('--packet-size',
                     help="packet size in bytes",
@@ -80,20 +81,19 @@ for flowSizeDir in sorted(glob.glob("%s/*/*/" % args.refdir)):
 # TODO: normalize flow completion times
 # map load to time
 for typeDir in sorted(glob.glob("%s/*/" % args.dir)): 
-    typeName = typeDir.split('/')[-1]
+    typeName = typeDir.split('/')[-2]
 
     loads = []
     avgCompletionTimes = []
     for loadDir in sorted(glob.glob("%s/*/" % typeDir)):
         load = str.split(loadDir, "/")
-        loadNum = float(load[-1])
+        loadNum = float(load[-2])
         print "=== Load = %.3f ===" % loadNum
 
         completionTimes = []
         sumCompletionTimes = 0.0
         numGoodFlows = 0
-        for sendFile in glob.glob("%ssend-*.txt" % loadDir):
-            #recvFile = "%srecv-%d.txt" % (loadDir, flowNum)
+        for sendFile in glob.glob("%ssend-*-*.txt" % loadDir):
             recvFile = string.replace(sendFile, 'send', 'recv')
             (numSent, start) = parse_data(sendFile)
             (numReceived, end) = parse_data(recvFile)
@@ -104,7 +104,7 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
             #normalizedCompletionTime = math.log(numSent, 2) * args.delay / 1000000
             #bestPossibleRate = float(args.packet_size) / (float(args.delay) / 1000)
             #bestPossible = float(numSent) * float(args.packet_size) / bestPossibleRate
-            bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000
+            bestPossible = float(numSent) * args.packet_size / (args.bw * BITS_PER_MEGABIT / BITS_PER_BYTE) + float(args.delay) / 2 / 1000
             #bestPossible = avgBestCompletionTimes[numSent]
             normalizedFCT = (end-start) / bestPossible
             sumCompletionTimes += normalizedFCT
