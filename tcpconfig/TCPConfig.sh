@@ -18,3 +18,7 @@ sysctl -w net.ipv4.tcp_tw_recycle=0
 sysctl -w net.ipv4.tcp_tw_reuse=0
 sysctl -w net.ipv4.tcp_window_scaling=1
 sysctl -w net.ipv4.tcp_workaround_signed_windows=0
+
+dev=$(ip route show | head -n 1)
+sudo ip route change $dev initcwnd 10
+ip route show
