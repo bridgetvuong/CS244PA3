@@ -48,17 +48,16 @@ args = parser.parse_args()
 # return: (num packets, time)
 def parse_data(filename):
     lines = open(filename, 'r').readlines()
-    if not (len(lines) == 2 or len(lines) == 3):
+    if len(lines) is not 2:
         return (None, None)
-    if len(lines) == 2:
-        return (int(lines[0]), float(lines[1]))
-    else:
-        return (int(lines[0]), float(lines[1]), float(lines[2]))
+    return (int(lines[0]), float(lines[1]))
 
 # TODO: normalize flow completion times
 # map load to time
+"""
 avgBestCompletionTimes = {}
-for flowSizeDir in sorted(glob.glob("%s/*/" % args.refdir)):
+for flowSizeDir in sorted(glob.glob("%s/*/*/" % args.refdir)):
+    print flowSizeDir
     flowSize = int(str.split(flowSizeDir, "/")[-2])
     print "=== flowSize = %s ===" % flowSize
     sumCompletionTimes = 0.0
@@ -76,28 +75,29 @@ for flowSizeDir in sorted(glob.glob("%s/*/" % args.refdir)):
         #print "IDEAL: Flow of size %d took %f to complete" % (numSent, (end1-start))
         #print "=== best possible rate: %f" % (bestPossible)
     avgBestCompletionTimes[flowSize] = sum(sorted(completionTimes)[1:-1]) / (numTrials - 2)
+"""
 
 # TODO: normalize flow completion times
 # map load to time
 for typeDir in sorted(glob.glob("%s/*/" % args.dir)): 
-    typeName = typeDir.split('/')[-2]
-    print typeName
+    typeName = typeDir.split('/')[-1]
 
     loads = []
     avgCompletionTimes = []
     for loadDir in sorted(glob.glob("%s/*/" % typeDir)):
         load = str.split(loadDir, "/")
-        loadNum = float(load[len(load)-2])
+        loadNum = float(load[-1])
         print "=== Load = %.3f ===" % loadNum
 
         completionTimes = []
         sumCompletionTimes = 0.0
-        nFlows = len(glob.glob("%ssend-*.txt" % loadDir))
         numGoodFlows = 0
         for sendFile in glob.glob("%ssend-*.txt" % loadDir):
             #recvFile = "%srecv-%d.txt" % (loadDir, flowNum)
-            (numSent, start, end1) = parse_data(sendFile)
-            if numSent == None:
+            recvFile = string.replace(sendFile, 'send', 'recv')
+            (numSent, start) = parse_data(sendFile)
+            (numReceived, end) = parse_data(recvFile)
+            if numSent == None or numReceived == None:
                 # Error occured. Skip this data point
                 continue
             numGoodFlows += 1
@@ -106,15 +106,15 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
             #bestPossible = float(numSent) * float(args.packet_size) / bestPossibleRate
             bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000
             #bestPossible = avgBestCompletionTimes[numSent]
-            normalizedFCT = (end1-start) / bestPossible
+            normalizedFCT = (end-start) / bestPossible
             sumCompletionTimes += normalizedFCT
             completionTimes.append(normalizedFCT)
-            print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end1-start), bestPossible)
+            print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
             #print "=== best possible rate: %f" % (bestPossible)
         loads.append(loadNum)
         # take out bottom 2 and top 2
         #print sorted(completionTimes)
-        avgCompletionTime = sum(sorted(completionTimes)) / (nFlows )
+        avgCompletionTime = sum(sorted(completionTimes)) / (numGoodFlows)
         avgCompletionTimes.append(avgCompletionTime)
 
     print loads

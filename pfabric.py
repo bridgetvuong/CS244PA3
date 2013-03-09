@@ -55,32 +55,31 @@ parser.add_argument('--tcp',
 parser.add_argument('--bw',
                     help="link bandwidth in Mbps",
                     type=int,
-                    default=1000)
+                    default=100)
 
 parser.add_argument('--delay',
                     help="end-to-end RT delay in ms",
                     type=int,
-                    default=12)
+                    default=0)
 
 parser.add_argument('--nhosts',
                     help="number of hosts",
                     type=int,
                     default=2)
 
-parser.add_argument('--nflows',
-                    help="number of flows",
-                    type=int,
-                    default=1000)
-
 parser.add_argument('--packet-size',
                     help="packet size in bytes",
                     type=int,
                     default=1500)
 
-parser.add_argument('--flow-size',
-                    help="flow size in packets",
+parser.add_argument('--nflows-per-host',
+                    help="number of flows per host",
                     type=int,
-                    default=None)
+                    default=100)
+
+parser.add_argument('--dest-file',
+                    help="file with host info",
+                    default="receivers")
 
 # Expt parameters
 args = parser.parse_args()
@@ -123,8 +122,9 @@ def main():
 #        host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)
 
     # Send flows
-    flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%s/%%s/%%s" % (args.outputdir, args.tcp)
-    flowStartCmd = "sudo python flowGenerator.py --src-ip %%s --src-port %%d --dest-ip %%s --dest-port %%d --num-packets %%d --num-bands %%d --max-packets %%d --packet-size %%d > %s/%s/%%.1f/%%s" % (args.outputdir, args.tcp)
+    outputDir = "%s/%s" % (args.outputdir, args.tcp)
+    flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%%s/%%s" % (outputDir)
+    flowStartCmd = "sudo python multipleFlowGenerator.py --src-ip %%s --num-bands %%d --packet-size %%d --workload %%s --dest-file %%s --bw %%d --load %%f --nflows %%d --output-dir %s/%%.1f > %s/%%.1f/%%s" % (outputDir, outputDir)
 
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         random.seed(1234568)
@@ -135,41 +135,28 @@ def main():
         receivers = []
         waitList = []
         # Choose random receiver and start receiving
-        for i in xrange(args.nflows):
-            dest = hosts[random.randrange(args.nhosts)]
-            destPort = portNum#random.randrange(1025, 9999)
-            portNum += 1
-            receivers.append((dest, destPort))
-            waitElem = dest.popen(flowReceiveCmd  % (destPort, args.packet_size, load, "recv-%d.txt" % (i)), shell=True)
-            waitList.append(waitElem)
+        for src in hosts:
+            outfile = open("receivers-%s.txt" % src.name, 'w+')
+            for i in xrange(args.nflows_per_host):
+                dest = hosts[len(hosts)-1]#hosts[random.randrange(args.nhosts)]
+                destPort = portNum
+                portNum += 1
+                receivers.append((dest, destPort))
+                waitElem = dest.popen(flowReceiveCmd  % (destPort, args.packet_size, load, "recv-%s-%d.txt" % (src.IP(), i)), shell=True)
+                waitList.append(waitElem)
+                outfile.write(str(dest.IP()) + '\n')
+                outfile.write(str(destPort) + '\n')
+            outfile.close()
 
+        print "Opened all receivers"
         sleep(5)
 
-        for i in xrange(args.nflows):
-
-            # Choose random sender and flow size according to distribution
-            src = hosts[random.randrange(args.nhosts)]
-            srcPort = portNum
-            portNum += 1#random.randrange(1025, 9999)
-            if args.flow_size is not None:
-                flowSize = args.flow_size
-            else:
-                flowSize = workload.getFlowSize()
-
-            dest = receivers[i][0]
-            destPort = receivers[i][1]
-
-            print "   Sending %d packets from %s:%d to %s:%d" % (flowSize, src.name, srcPort, dest.name, destPort)
-            src.popen(flowStartCmd % (src.IP(), srcPort, dest.IP(), destPort, flowSize, NUM_PRIO_BANDS,
-                                      workload.getMaxFlowSize(), args.packet_size, load, "send-%d.txt" % (i)), shell=True)
-
-            # Lambda is arrival rate = load*capacity converted to flows/s
-            lambd = load * args.bw * 1000000 / 8 / args.packet_size / workload.getAverageFlowSize()
-            waitTime = random.expovariate(lambd)
-            #print lambd
-            #print "Waiting %f seconds before next flow..." % waitTime
-            sys.stdout.flush()
-            sleep(waitTime)
+        #for src in hosts:
+        for i in xrange(len(hosts)-1):
+            src = hosts[i]
+            #print "   Sending %d packets from %s:%d to %s:%d" % (flowSize, src.name, srcPort, dest.name, destPort)
+            src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload, "receivers-%s.txt" % (src.name), args.bw, load, args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True)
+        print "Opened all senders"
 
         for waitElem in waitList:
             waitElem.communicate()

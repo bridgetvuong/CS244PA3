@@ -70,6 +70,7 @@ def main():
     # Create socket
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    skt.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 10000)
     skt.bind((args.src_ip, args.src_port))
     skt.connect((args.dest_ip, args.dest_port))
 

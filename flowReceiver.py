@@ -31,6 +31,7 @@ def main():
     # Create socket
     skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    skt.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 10000)
     skt.bind(('', args.dest_port))
     skt.listen(1)
     conn, addr = skt.accept()

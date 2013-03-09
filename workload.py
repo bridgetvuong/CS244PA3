@@ -23,5 +23,5 @@ class Workload():
             ind = random.random()
             for s in self.dist:
                 if ind <= s[0]:
-                    return s[1]
+                    return int(s[1])
 
