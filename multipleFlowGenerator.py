@@ -44,10 +44,10 @@ parser.add_argument('--load',
                     type=float,
                     required=True)
 
-parser.add_argument('--nflows',
-                    help="number of flows",
+parser.add_argument('--time',
+                    help="number of seconds to run",
                     type=int,
-                    default=100)
+                    default=6000)
 
 parser.add_argument('--dest-file',
                     help="file containing info for destinations",
@@ -86,12 +86,13 @@ def main():
     workload  = Workload(args.workload)
     receivers = readReceivers()
 
-    flowStartCmd = "sudo python ./flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d > %s/send-%s-%i.txt"
+    flowStartCmd = "sudo python ./flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d > %s/send-%s-%d.txt"
 
     #random.seed(1234568)
     print "STARTING AT TIME %f" % time()
     srcPort = 5000
-    for i in xrange(args.nflows):
+    start = time()
+    while time() - start < args.time:
         lambd = args.load * args.bw * 1000000 / 8 / args.packet_size / workload.getAverageFlowSize()
         waitTime = random.expovariate(lambd)
         print "Sleeping for %f seconds..." % waitTime
@@ -99,12 +100,13 @@ def main():
         sleep(waitTime)
 
         # get random receiver
+        i = random.randrange(len(receivers))
         (dest_ip, dest_port) = receivers[i]
         numPackets = workload.getFlowSize()
 
         print "Sending %d packets from %s:%d to %s:%d" % (numPackets, args.src_ip, srcPort+i, dest_ip, dest_port)
         Popen(flowStartCmd % (args.src_ip, srcPort + i, dest_ip, dest_port, numPackets, args.num_bands, 
-                              workload.getMaxFlowSize(), args.packet_size, args.output_dir, args.src_ip, i), shell=True)
+                              workload.getMaxFlowSize(), args.packet_size, args.output_dir, args.src_ip, srcPort+i), shell=True)
 
     print "ENDING AT TIME %f" % time()
 
