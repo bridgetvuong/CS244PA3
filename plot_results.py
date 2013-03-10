@@ -23,9 +23,9 @@ parser.add_argument('--dir',
                     help="Directory from which outputs of the sweep are read.",
                     required=True)
 
-parser.add_argument('--refdir',
-                    help="Directory from which reference outputs of the sweep are read.",
-                    required=True)
+#parser.add_argument('--refdir',
+#                    help="Directory from which reference outputs of the sweep are read.",
+#                    required=True)
 
 parser.add_argument('--bw',
                     help="link bandwidth in Mbps",
