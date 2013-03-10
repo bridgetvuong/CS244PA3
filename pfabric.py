@@ -111,6 +111,16 @@ def main():
     tcpConfigCmd = "sudo ./tcpconfig/%sConfig.sh" % args.tcp
     call(tcpConfigCmd, shell=True)
 
+    # Configure txqueuelen
+    queueLen = 150
+    if usePFabric:
+        queueLen = 15
+    setQueueLenCmd = "ifconfig %%s txqueuelen %d" % queueLen
+    call(setQueueLenCmd % "eth0", shell=True)
+    for i in xrange(args.nhosts):
+        call(setQueueLenCmd % ("s0-eth%d" % (i+1)), shell=True)
+    call("ifconfig", shell=True)
+
     # tcpdump at both hosts
     tcpdumpCmd = "sudo tcpdump -n -x > %s/%s/%%s" % (args.outputdir, args.tcp)
     hosts = net.hosts
@@ -120,7 +130,7 @@ def main():
     # Send flows
     outputDir = "%s/%s" % (args.outputdir, args.tcp)
     flowReceiveCmd = "sudo python flowReceiver.py --dest-port %%d --packet-size %%d > %s/%%.1f/%%s" % (outputDir)
-    flowStartCmd = "sudo python multipleFlowGenerator.py --src-ip %%s --num-bands %%d --packet-size %%d --workload %%s --dest-file %%s --bw %%d --load %%f --nflows %%d --output-dir %s/%%.1f > %s/%%.1f/%%s" % (outputDir, outputDir)
+    flowStartCmd = "sudo python multipleFlowGenerator.py --src-ip %%s --num-bands %%d --packet-size %%d --workload %%s --dest-file %s/%%s --bw %%d --load %%f --nflows %%d --output-dir %s/%%.1f > %s/%%.1f/%%s" % (args.outputdir, outputDir, outputDir)
 
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         random.seed(1234568)
@@ -131,8 +141,8 @@ def main():
         portNum = 1025
         waitList = []
         for src in hosts:
-        #for src in hosts[0:args.nhosts-1]: # Change back for other test TODO
-            outfile = open("receivers-%s.txt" % src.name, 'w+')
+        #for src in hosts[0:args.nhosts-1]:
+            outfile = open("%s/receivers-%s.txt" % (args.outputdir, src.name), 'w+')
             for i in xrange(args.nflows_per_host):
                 #dest = hosts[len(hosts)-1]
                 dest = hosts[random.randrange(args.nhosts)]
@@ -147,11 +157,12 @@ def main():
         sleep(5)
 
         # Start senders
+        # effectiveLoad = load/(args.nhosts - 1)
         for src in hosts:
         #for i in xrange(len(hosts)-1):
         #    src = hosts[i]
             src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload, "receivers-%s.txt" % (src.name), args.bw,
-                                      load, args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True) # TODO remove nhosts
+                                      load, args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True)
         print "Opened all senders"
 
         # Wait for receivers
@@ -165,6 +176,12 @@ def main():
     tcpConfigCmd = "sudo ./tcpconfig/TCPConfig.sh"
     call(tcpConfigCmd, shell=True)
     print "TCP reset"
+
+    # Reset to default txqueuelen
+    queueLen = 1000
+    call("sudo ifconfig eth0 txqueuelen %d" % queueLen, shell=True)
+    call("ifconfig", shell=True)
+    print "txqueuelen reset"
 
     end = time()
     cprint("Everything took %.3f seconds" % (end - start), "yellow")
