@@ -92,6 +92,11 @@ def main():
     print "STARTING AT TIME %f" % time()
     srcPort = 5000
     for i in xrange(args.nflows):
+        lambd = args.load * args.bw * 1000000 / 8 / args.packet_size / workload.getAverageFlowSize()
+        waitTime = random.expovariate(lambd)
+        print "Sleeping for %f seconds..." % waitTime
+        sys.stdout.flush()
+        sleep(waitTime)
         # get random receiver
         (dest_ip, dest_port) = receivers[i]
         numPackets = workload.getFlowSize()
@@ -100,11 +105,6 @@ def main():
         Popen(flowStartCmd % (args.src_ip, srcPort + i, dest_ip, dest_port, numPackets, args.num_bands, 
                               workload.getMaxFlowSize(), args.packet_size, args.output_dir, args.src_ip, i), shell=True)
 
-        lambd = args.load * args.bw * 1000000 / 8 / args.packet_size / workload.getAverageFlowSize()
-        waitTime = random.expovariate(lambd)
-        print "Sleeping for %f seconds..." % waitTime
-        sys.stdout.flush()
-        sleep(waitTime)
     print "ENDING AT TIME %f" % time()
 
 if __name__ == '__main__':

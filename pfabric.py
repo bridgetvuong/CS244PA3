@@ -100,7 +100,7 @@ def main():
     # Reset to known state
     usePFabric = (args.tcp == "minTCP")
     topo = pFabricTopo(n=args.nhosts, bw=args.bw, delay=args.delay, usepFabric=usePFabric, numPrioBands=NUM_PRIO_BANDS)
-    setLogLevel('debug')
+    #setLogLevel('debug')
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
 
@@ -138,12 +138,13 @@ def main():
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 
         # Start receivers
-        portNum = 1025
+        portNum = 31025
         waitList = []
+        nFlowsPerHost = int(args.nflows_per_host * load / 0.1)
         for src in hosts:
         #for src in hosts[0:args.nhosts-1]:
             outfile = open("%s/receivers-%s.txt" % (args.outputdir, src.name), 'w+')
-            for i in xrange(args.nflows_per_host):
+            for i in xrange(nFlowsPerHost):
                 #dest = hosts[len(hosts)-1]
                 dest = hosts[random.randrange(args.nhosts)]
                 destPort = portNum
@@ -162,7 +163,7 @@ def main():
         #for i in xrange(len(hosts)-1):
         #    src = hosts[i]
             src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload, "receivers-%s.txt" % (src.name), args.bw,
-                                      load, args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True)
+                                      load, nFlowsPerHost, load, load, "send-%s.txt" % (src.name)), shell=True)
         print "Opened all senders"
 
         # Wait for receivers
