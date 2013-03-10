@@ -130,10 +130,12 @@ def main():
         # Start receivers
         portNum = 1025
         waitList = []
-        for src in hosts[0:args.nhosts-1]: # Change back for other test TODO
+        for src in hosts:
+        #for src in hosts[0:args.nhosts-1]: # Change back for other test TODO
             outfile = open("receivers-%s.txt" % src.name, 'w+')
             for i in xrange(args.nflows_per_host):
-                dest = hosts[len(hosts)-1]#hosts[random.randrange(args.nhosts)]
+                #dest = hosts[len(hosts)-1]
+                dest = hosts[random.randrange(args.nhosts)]
                 destPort = portNum
                 portNum += 1
                 waitElem = dest.popen(flowReceiveCmd  % (destPort, args.packet_size, load, "recv-%s-%d.txt" % (src.IP(), i)), shell=True)
@@ -145,11 +147,11 @@ def main():
         sleep(5)
 
         # Start senders
-        #for src in hosts:
-        for i in xrange(len(hosts)-1):
-            src = hosts[i]
+        for src in hosts:
+        #for i in xrange(len(hosts)-1):
+        #    src = hosts[i]
             src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload, "receivers-%s.txt" % (src.name), args.bw,
-                                      load/(args.nhosts-1), args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True) # TODO remove nhosts
+                                      load, args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True) # TODO remove nhosts
         print "Opened all senders"
 
         # Wait for receivers
