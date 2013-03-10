@@ -33,6 +33,7 @@ def main():
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     skt.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 15000000)
     skt.bind(('', args.dest_port))
+    skt.settimeout(10*60) # Timeout after 10 minutes
     skt.listen(1)
     conn, addr = skt.accept()
 
