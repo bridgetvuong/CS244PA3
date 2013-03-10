@@ -82,6 +82,7 @@ for flowSizeDir in sorted(glob.glob("%s/*/*/" % args.refdir)):
 # map load to time
 for typeDir in sorted(glob.glob("%s/*/" % args.dir)): 
     typeName = typeDir.split('/')[-2]
+    print typeName
 
     loads = []
     avgCompletionTimes = []
@@ -92,7 +93,7 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
 
         completionTimes = []
         sumCompletionTimes = 0.0
-        numGoodFlows = 0
+        numGoodFlows = 0.0
         for sendFile in glob.glob("%ssend-*-*.txt" % loadDir):
             recvFile = string.replace(sendFile, 'send', 'recv')
             (numSent, start) = parse_data(sendFile)

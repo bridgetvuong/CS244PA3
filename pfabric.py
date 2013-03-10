@@ -60,7 +60,7 @@ parser.add_argument('--bw',
 parser.add_argument('--delay',
                     help="end-to-end RT delay in ms",
                     type=int,
-                    default=0)
+                    default=None)
 
 parser.add_argument('--nhosts',
                     help="number of hosts",
@@ -100,7 +100,7 @@ def main():
     # Reset to known state
     usePFabric = (args.tcp == "minTCP")
     topo = pFabricTopo(n=args.nhosts, bw=args.bw, delay=args.delay, usepFabric=usePFabric, numPrioBands=NUM_PRIO_BANDS)
-    #setLogLevel('debug')
+    setLogLevel('debug')
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
 
@@ -127,10 +127,10 @@ def main():
         print "===== Starting load level %.1f" % load
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 
+        # Start receivers
         portNum = 1025
         waitList = []
-        # Choose random receiver and start receiving
-        for src in hosts:
+        for src in hosts[0:args.nhosts-1]: # Change back for other test TODO
             outfile = open("receivers-%s.txt" % src.name, 'w+')
             for i in xrange(args.nflows_per_host):
                 dest = hosts[len(hosts)-1]#hosts[random.randrange(args.nhosts)]
@@ -141,17 +141,18 @@ def main():
                 outfile.write(str(dest.IP()) + '\n')
                 outfile.write(str(destPort) + '\n')
             outfile.close()
-
         print "Opened all receivers"
         sleep(5)
 
+        # Start senders
         #for src in hosts:
         for i in xrange(len(hosts)-1):
             src = hosts[i]
             src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload, "receivers-%s.txt" % (src.name), args.bw,
-                                      load, args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True)
+                                      load/(args.nhosts-1), args.nflows_per_host, load, load, "send-%s.txt" % (src.name)), shell=True) # TODO remove nhosts
         print "Opened all senders"
 
+        # Wait for receivers
         for waitElem in waitList:
             waitElem.communicate()
 

@@ -3,7 +3,7 @@ from mininet.topo import Topo
 class pFabricTopo(Topo):
     "Simple topology for pFabric experiment."
 
-    def __init__(self, n=2, bw=1000, delay=12, usepFabric=True, numPrioBands=16):
+    def __init__(self, n=2, bw=100, delay=None, usepFabric=True, numPrioBands=16):
         super(pFabricTopo, self).__init__()
 
         # create hosts
@@ -15,9 +15,12 @@ class pFabricTopo(Topo):
         switch = self.addSwitch('s0')
 
         # Add links with appropriate characteristics
-        linkOptions = {'bw': bw, 'delay': '%dms' % (delay/4), 'max_queue_size': 150}
+        linkOptions = {'bw': bw, 'max_queue_size': 150}
+        if delay:
+            linkOptions['delay'] = '%dms' % (delay/4)
+            linkOptions['max_queue_size'] = 150
         if usepFabric:
-            linkOptions['max_queue_size'] = 15
+            if delay: linkOptions['max_queue_size'] = 15
             linkOptions['use_prio'] = True
             linkOptions['num_bands'] = numPrioBands
 

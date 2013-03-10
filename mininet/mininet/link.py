@@ -177,11 +177,11 @@ class TCIntf( Intf ):
        Allows specification of bandwidth limits (various methods)
        as well as delay, loss and max queue length"""
 
-    def bwCmds( self, bw=None, speedup=0, use_hfsc=False, use_tbf=False,
+    def bwCmds( self, parent, bw=None, speedup=0, use_hfsc=False, use_tbf=False,
                 latency_ms=None, enable_ecn=False, enable_red=False ):
         "Return tc commands to set bandwidth"
 
-        cmds, parent = [], ' root '
+        cmds = []
 
         if bw and ( bw < 0 or bw > 1000 ):
             error( 'Bandwidth', bw, 'is outside range 0..1000 Mbps\n' )
@@ -196,17 +196,17 @@ class TCIntf( Intf ):
             # are specifying the correct sizes. For now I have used
             # the same settings we had in the mininet-hifi code.
             if use_hfsc:
-                cmds += [ '%s qdisc add dev %s root handle 1:0 hfsc default 1',
+                cmds += [ '%s qdisc add dev %s' + parent + 'handle 1:0 hfsc default 1',
                           '%s class add dev %s parent 1:0 classid 1:1 hfsc sc '
                           + 'rate %fMbit ul rate %fMbit' % ( bw, bw ) ]
             elif use_tbf:
                 if latency_ms is None:
                     latency_ms = 15 * 8 / bw
-                cmds += [ '%s qdisc add dev %s root handle 1: tbf ' +
+                cmds += [ '%s qdisc add dev %s' + parent + 'handle 1: tbf ' +
                           'rate %fMbit burst 15000 latency %fms' %
                           ( bw, latency_ms ) ]
             else:
-                cmds += [ '%s qdisc add dev %s root handle 1:0 htb default 1',
+                cmds += [ '%s qdisc add dev %s' + parent + 'handle 1:0 htb default 1',
                           '%s class add dev %s parent 1:0 classid 1:1 htb ' +
                           'rate %fMbit burst 15k' % bw ]
             parent = ' parent 1:1 '
@@ -280,20 +280,21 @@ class TCIntf( Intf ):
 
         # Clear existing configuration
         cmds = [ '%s qdisc del dev %s root' ]
-
-        # Bandwidth limits via various methods
-        bwcmds, parent = self.bwCmds( bw=bw, speedup=speedup,
-                                      use_hfsc=use_hfsc, use_tbf=use_tbf,
-                                      latency_ms=latency_ms,
-                                      enable_ecn=enable_ecn,
-                                      enable_red=enable_red )
-        cmds += bwcmds
+        parent = ' root '
 
         # Delay/jitter/loss/max_queue_size using netem
         delaycmds, parent = self.delayCmds( delay=delay, jitter=jitter, loss=loss,
                                 max_queue_size=max_queue_size,
                                 parent=parent )
         cmds += delaycmds
+
+        # Bandwidth limits via various methods
+        bwcmds, parent = self.bwCmds( parent=parent, bw=bw, speedup=speedup,
+                                      use_hfsc=use_hfsc, use_tbf=use_tbf,
+                                      latency_ms=latency_ms,
+                                      enable_ecn=enable_ecn,
+                                      enable_red=enable_red )
+        cmds += bwcmds
 
         # Use priority queueing
         if use_prio:

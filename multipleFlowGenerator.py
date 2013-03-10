@@ -95,6 +95,7 @@ def main():
         (dest_ip, dest_port) = receivers[i]
         numPackets = workload.getFlowSize()
 
+        print "Sending %d packets from %s:%d to %s:%d" % (numPackets, args.src_ip, srcPort+i, dest_ip, dest_port)
         Popen(flowStartCmd % (args.src_ip, srcPort + i, dest_ip, dest_port, numPackets, args.num_bands, 
                               workload.getMaxFlowSize(), args.packet_size, args.output_dir, args.src_ip, i), shell=True)
 
