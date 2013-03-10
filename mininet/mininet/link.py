@@ -251,7 +251,8 @@ class TCIntf( Intf ):
                 cmds = [ '%s qdisc add dev %s ' + parent +
                          ' handle 10: netem ' +
                          netemargs ]
-        return cmds, ' parent 10:1 '
+                parent = ' parent 10:1 '
+        return cmds, parent
 
     def tc( self, cmd, tc='tc' ):
         "Execute tc command for our interface"
