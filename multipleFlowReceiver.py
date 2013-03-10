@@ -59,18 +59,18 @@ class Server:
     def run(self):
         self.open_socket()
         print args.time
+        sys.stdout.flush()
         start = time()
         while time() - start < args.time: 
-            inputready,outputready,exceptready = select.select([self.server],[],[]) 
-
+            inputready,outputready,exceptready = select.select([self.server],[],[self.server]) 
             for s in inputready: 
-
                 if s == self.server: 
                     # handle the server socket 
                     c = Client(self.server.accept()) 
                     c.start() 
                     self.threads.append(c) 
-
+            for s in exceptready:
+                print "received exception!"
         # close all threads 
 
         self.server.close() 
@@ -93,14 +93,17 @@ class Client(threading.Thread):
             else: break
         end = time()
         outfile = open("%s/recv-%s-%d.txt" % (args.output_dir, self.address[0], self.address[1]), 'w+')
-        outfile.write(str(count) + '\n')
-        outfile.write(str(end) + '\n')
+        outfile.write("%d\n" % (count))
+        outfile.write("%f\n" % (end))
         self.client.close() 
 
 
 if __name__ == "__main__": 
     print "HI"
+    sys.stdout.flush()
     s = Server()
-    print "HI AGAIN" 
+    print "HI AGAIN"
+    sys.stdout.flush()
     s.run()
     print "HI LASTLY"
+    sys.stdout.flush()

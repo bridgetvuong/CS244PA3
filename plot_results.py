@@ -96,10 +96,14 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
         numGoodFlows = 0.0
         for sendFile in glob.glob("%ssend-*-*.txt" % loadDir):
             recvFile = string.replace(sendFile, 'send', 'recv')
+            if len(glob.glob(recvFile)) is 0:
+                continue
             (numSent, start) = parse_data(sendFile)
-            (numReceived, end) = parse_data(recvFile)
-            if numSent == None or numReceived == None:
+            if numSent == None:
                 # Error occured. Skip this data point
+                continue
+            (numReceived, end) = parse_data(recvFile)
+            if numReceived == None:
                 continue
             numGoodFlows += 1
             #normalizedCompletionTime = math.log(numSent, 2) * args.delay / 1000000
@@ -110,6 +114,8 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
             normalizedFCT = (end-start) / bestPossible
             sumCompletionTimes += normalizedFCT
             completionTimes.append(normalizedFCT)
+            if end-start < 0:
+                print numSent, numReceived
             print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
             #print "=== best possible rate: %f" % (bestPossible)
         loads.append(loadNum)

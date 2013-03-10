@@ -158,9 +158,10 @@ def main():
         for src in hosts:
         #for i in xrange(len(hosts)-1):
         #    src = hosts[i]
-            src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload,
-                                      "receivers-%s.txt" % (src.name), args.bw, load, args.time,
+            waitElem = src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload,
+                                      "receivers-%s.txt" % (src.name), args.bw, load, args.time + 5,
                                       load, load, "send-%s.txt" % (src.name)), shell=True)
+            waitList.append(waitElem)
         print "Opened all senders"
 
         # Wait for receivers
