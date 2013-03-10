@@ -299,7 +299,7 @@ class TCIntf( Intf ):
 
         # Use priority queueing
         if use_prio:
-            cmds += [ '%s qdisc add dev %s' + parent + 'handle 20: prio ' + 'bands %d' % (num_bands) ]
+            cmds += [ '%s qdisc add dev %s' + parent + 'handle 20: prio ' + 'bands %d priomap 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0' % (num_bands) ]
             for i in xrange(1, num_bands+1):
                 cmds += [ '%s filter add dev %s parent 20:0 protocol ip prio 1 u32 '
                           + 'match u8 0x%02x 0xff at 52 classid 20:%x' % (i, i) ]
