@@ -65,7 +65,7 @@ parser.add_argument('--delay',
 parser.add_argument('--nhosts',
                     help="number of hosts",
                     type=int,
-                    default=2)
+                    default=54)
 
 parser.add_argument('--packet-size',
                     help="packet size in bytes",
