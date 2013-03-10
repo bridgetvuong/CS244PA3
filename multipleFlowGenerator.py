@@ -88,7 +88,7 @@ def main():
 
     flowStartCmd = "sudo python ./flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d > %s/send-%s-%i.txt"
 
-    random.seed(1234568)
+    #random.seed(1234568)
     print "STARTING AT TIME %f" % time()
     srcPort = 5000
     for i in xrange(args.nflows):
@@ -97,6 +97,7 @@ def main():
         print "Sleeping for %f seconds..." % waitTime
         sys.stdout.flush()
         sleep(waitTime)
+
         # get random receiver
         (dest_ip, dest_port) = receivers[i]
         numPackets = workload.getFlowSize()
