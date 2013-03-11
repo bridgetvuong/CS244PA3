@@ -106,6 +106,7 @@ def main():
 
     dumpNodeConnections(net.hosts)
     net.pingAll()
+    hosts = net.hosts
 
     # Configure TCP to use reno and disable advanced features
     tcpConfigCmd = "sudo ./tcpconfig/%sConfig.sh" % args.tcp
@@ -122,49 +123,44 @@ def main():
     call("ifconfig", shell=True)
 
     # tcpdump at both hosts
-    tcpdumpCmd = "sudo tcpdump -n -x > %s/%s/%%s" % (args.outputdir, args.tcp)
-    hosts = net.hosts
-#    for host in hosts:
-#        host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)
+    "tcpdumpCmd = "sudo tcpdump -n -x > %s/%s/%%s" % (args.outputdir, args.tcp)
+    for host in hosts:
+        host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)"
 
     # Send flows
     outputDir = "%s/%s" % (args.outputdir, args.tcp)
     flowReceiveCmd = "sudo python multipleFlowReceiver.py --dest-port %%d --packet-size %%d --output-dir %s/%%.1f --time %%d > %s/%%.1f/%%s" % (outputDir, outputDir)
-    flowStartCmd = "sudo python multipleFlowGenerator.py --src-ip %%s --num-bands %%d --packet-size %%d --workload %%s --dest-file %s/%%s --bw %%d --load %%f --time %%d --output-dir %s/%%.1f > %s/%%.1f/%%s" % (args.outputdir, outputDir, outputDir)
+    flowStartCmd = "sudo python multipleFlowGenerator.py --src-ip %%s --num-bands %%d --packet-size %%d --workload %%s --dest-file %s/hosts.txt --bw %%d --load %%f --time %%d --output-dir %s/%%.1f > %s/%%.1f/%%s" % (args.outputdir, outputDir, outputDir)
+
+    # Write list of hosts to file
+    destPort = 11125
+    outfile = open("%s/hosts.txt" % (args.outputdir), 'w+')
+    for dest in hosts:
+        outfile.write(str(dest.IP()) + '\n')
+        outfile.write(str(destPort) + '\n')
+    outfile.close()
 
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         print "===== Starting load level %.1f" % load
         os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 
-        # Start receivers
-        destPort = 11125
         waitList = []
-        for src in hosts:
-            outfile = open("%s/receivers-%s.txt" % (args.outputdir, src.name), 'w+')
-            for dest in hosts:
-                outfile.write(str(dest.IP()) + '\n')
-                outfile.write(str(destPort) + '\n')
-            outfile.close()
 
+        # Start receivers
         for dest in hosts:
             waitElem = dest.popen(flowReceiveCmd  % (destPort, args.packet_size, load, args.time, load, "recv-%s.txt" % (dest.name)), shell=True)
             waitList.append(waitElem)
-
         print "Opened all receivers"
         sleep(5)
 
         # Start senders
-        # effectiveLoad = load/(args.nhosts - 1)
         for src in hosts:
-        #for i in xrange(len(hosts)-1):
-        #    src = hosts[i]
-            waitElem = src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload,
-                                      "receivers-%s.txt" % (src.name), args.bw, load, args.time + 5,
-                                      load, load, "send-%s.txt" % (src.name)), shell=True)
+            waitElem = src.popen(flowStartCmd % (src.IP(), NUM_PRIO_BANDS, args.packet_size, args.workload, args.bw, load, args.time + 5,
+                                                 load, load, "send-%s.txt" % (src.name)), shell=True)
             waitList.append(waitElem)
         print "Opened all senders"
 
-        # Wait for receivers
+        # Wait for receivers and senders
         for waitElem in waitList:
             waitElem.communicate()
 
