@@ -124,9 +124,9 @@ def main():
     call("ifconfig", shell=True)
 
     # tcpdump at both hosts
-    'tcpdumpCmd = "sudo tcpdump -n -x > %s/%s/%%s" % (args.outputdir, args.tcp)
-    for host in hosts:
-        host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)'
+    #tcpdumpCmd = "sudo tcpdump -n -x > %s/%s/%%s" % (args.outputdir, args.tcp)
+    #for host in hosts:
+    #    host.popen(tcpdumpCmd % ("tcpdump-%s.txt" % host.name), shell=True)
 
     # Send flows
     outputDir = "%s/%s" % (args.outputdir, args.tcp)
