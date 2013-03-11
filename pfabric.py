@@ -161,7 +161,7 @@ def main():
         for src in hosts:
             waitElem = src.popen(flowStartCmd %
                                  (src.IP(), NUM_PRIO_BANDS, args.packet_size,
-                                  args.workload, args.bw, load, args.time + 1,
+                                  args.workload, args.bw, load, args.time,
                                   load, load, "send-%s.txt" % (src.name)),
                                  shell=True)
             waitList.append(waitElem)
