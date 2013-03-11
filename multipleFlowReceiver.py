@@ -50,19 +50,19 @@ class Server:
         except: 
             if self.server: 
                 self.server.close() 
-            print "*"*80
+            print "-"*80
             print "Caught exception."
-            print "*"*80
+            print "-"*80
             traceback.print_exc(file=sys.stdout)
             sys.exit(1) 
 
     def run(self):
         self.open_socket()
-        print args.time
-        sys.stdout.flush()
         start = time()
+        count = 0
         while time() - start < args.time: 
-            inputready,outputready,exceptready = select.select([self.server],[],[self.server]) 
+            inputready,outputready,exceptready = select.select([self.server],[],[self.server],1) 
+            count += len(inputready)
             for s in inputready: 
                 if s == self.server: 
                     # handle the server socket 
@@ -71,8 +71,10 @@ class Server:
                     self.threads.append(c) 
             for s in exceptready:
                 print "received exception!"
-        # close all threads 
 
+        print "Received %d flows" % (count)
+
+        # close all threads 
         self.server.close() 
         for c in self.threads: 
             c.join() 
@@ -99,11 +101,6 @@ class Client(threading.Thread):
 
 
 if __name__ == "__main__": 
-    print "HI"
-    sys.stdout.flush()
     s = Server()
-    print "HI AGAIN"
-    sys.stdout.flush()
     s.run()
-    print "HI LASTLY"
     sys.stdout.flush()

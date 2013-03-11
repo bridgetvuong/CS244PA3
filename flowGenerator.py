@@ -100,4 +100,3 @@ if __name__ == '__main__':
         print "Caught exception.  Cleaning up..."
         print "-"*80
         traceback.print_exc(file=sys.stdout)
-
