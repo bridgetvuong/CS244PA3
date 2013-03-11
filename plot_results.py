@@ -9,7 +9,7 @@ import sys
 import math
 import string
 
-BITS_PER_MEGABIT = 1000000
+BITS_PER_MEGABIT = 1048576
 BITS_PER_BYTE = 8
 MILLISECS_PER_SEC = 1000
 
@@ -93,35 +93,25 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
 
         completionTimes = []
         sumCompletionTimes = 0.0
-        numGoodFlows = 0.0
         for sendFile in glob.glob("%ssend-*-*.txt" % loadDir):
             recvFile = string.replace(sendFile, 'send', 'recv')
             if len(glob.glob(recvFile)) is 0:
                 continue
             (numSent, start) = parse_data(sendFile)
-            if numSent == None:
-                # Error occured. Skip this data point
-                continue
             (numReceived, end) = parse_data(recvFile)
-            if numReceived == None:
+            if numSent == None or numReceived == None:
                 continue
-            numGoodFlows += 1
-            #normalizedCompletionTime = math.log(numSent, 2) * args.delay / 1000000
-            #bestPossibleRate = float(args.packet_size) / (float(args.delay) / 1000)
-            #bestPossible = float(numSent) * float(args.packet_size) / bestPossibleRate
             bestPossible = float(numSent) * args.packet_size / (args.bw * BITS_PER_MEGABIT / BITS_PER_BYTE) + float(args.delay) / 2 / 1000
-            #bestPossible = avgBestCompletionTimes[numSent]
             normalizedFCT = (end-start) / bestPossible
             sumCompletionTimes += normalizedFCT
             completionTimes.append(normalizedFCT)
-            if end-start < 0:
-                print numSent, numReceived
+            print numSent, numReceived
             print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
             #print "=== best possible rate: %f" % (bestPossible)
         loads.append(loadNum)
         # take out bottom 2 and top 2
         #print sorted(completionTimes)
-        avgCompletionTime = sum(sorted(completionTimes)) / (numGoodFlows)
+        avgCompletionTime = sum(sorted(completionTimes)) / (len(completionTimes))
         avgCompletionTimes.append(avgCompletionTime)
 
     print loads
