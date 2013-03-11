@@ -1,20 +1,20 @@
 #!/bin/bash
 
 nhosts=20
-timeperload=360
+runtime=1200
 cases=( "minTCP" "TCP" )
-workloads=( "websearch_scaled3" "datamining_scaled3" )
+workloads=( "websearch_scaled3" "datamining_scaled3")
 
 # Run on web search workload
 for w in "${workloads[@]}"
 do
   for i in "${cases[@]}"
     do
-      sudo python pfabric.py --outputdir output_"$w" --tcp "$i" --workload workloads/"$w".txt --time "$timeperload" --nhosts "$nhosts"
+      sudo python ./pfabric.py --outputdir "$w"_"$nhosts"h_"$runtime"s --tcp "$i" --workload workloads/"$w".txt --time "$runtime" --nhosts "$nhosts"
     done
 
     # Plot
-    sudo python plot_results.py --dir output_"$w" --out output_"$w"/"$w".png
+    sudo python ./plot_results.py --dir "$w"_"$nhosts"h_"$runtime"s --out "$w"_"$nhosts"h_"$runtime"s/"$w"_"$nhosts"h_"$runtime"s.png
 done
 
 #sudo shutdown -h now
