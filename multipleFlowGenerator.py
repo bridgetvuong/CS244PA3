@@ -87,7 +87,7 @@ def main():
     receivers = readReceivers()
     print "NUM RECEIVERS: %d" % len(receivers)
 
-    flowStartCmd = "sudo python ./flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d > %s/send-%s-%d.txt"
+    flowStartCmd = "sudo python ./flowGenerator.py --src-ip %s --src-port %d --dest-ip %s --dest-port %d --num-packets %d --num-bands %d --max-packets %d --packet-size %d --out %s/send-%s-%d.txt > test.txt"
 
     #random.seed(1234568)
     print "STARTING AT TIME %f" % time()

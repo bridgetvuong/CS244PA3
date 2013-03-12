@@ -89,8 +89,8 @@ def main():
         print "Bad TCP argument."
         exit(1)
 
-    os.system("mkdir %s" % args.outputdir)
-    os.system("mkdir %s/%s" % (args.outputdir, args.tcp))
+    #os.system("mkdir -p %s" % args.outputdir)
+    #os.system("mkdir -p %s/%s" % (args.outputdir, args.tcp))
 
     start = time()
 
@@ -143,7 +143,7 @@ def main():
 
     for load in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         print "===== Starting load level %.1f" % load
-        os.system("mkdir %s/%s/%.1f" % (args.outputdir, args.tcp, load))
+        os.system("mkdir -p %s/%s/%.1f" % (args.outputdir, args.tcp, load))
 
         waitList = []
 

@@ -56,6 +56,10 @@ parser.add_argument('--packet-size',
                     type=int,
                     default=1500)
 
+parser.add_argument('--out',
+                    help="out file",
+                    required=True)
+
 # Expt parameters
 args = parser.parse_args()
 skt = None
@@ -75,8 +79,10 @@ def main():
     skt.connect((args.dest_ip, args.dest_port))
 
     # Print stats
-    print args.num_packets
-    print "%f" % time()
+    outfile = open("%s" % (args.out), 'w+')
+    outfile.write("%d\n" % (args.num_packets))
+    outfile.write("%f\n" % (time()))
+    outfile.close()
 
     # Send packets
     for i in xrange(args.num_packets):
@@ -88,7 +94,6 @@ def main():
         #sendPkt = ('%02x' % prio).decode('hex') + pkt
         skt.sendall(pkts[prio-1])
     skt.close()
-    sys.stdout.flush()
 
 if __name__ == '__main__':
     try:

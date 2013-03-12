@@ -94,9 +94,10 @@ class Client(threading.Thread):
                 count += 1
             else: break
         end = time()
-        outfile = open("%s/recv-%s-%d.txt" % (args.output_dir, self.address[0], self.address[1]), 'w+')
+        outfile = open("%s/send-%s-%d.txt" % (args.output_dir, self.address[0], self.address[1]), 'a+')
         outfile.write("%d\n" % (count))
         outfile.write("%f\n" % (end))
+        outfile.close()
         self.client.close() 
 
 

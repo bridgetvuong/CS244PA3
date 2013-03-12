@@ -22,6 +22,10 @@ parser.add_argument('--packet-size',
                     type=int,
                     default=1500)
 
+parser.add_argument('--out',
+                    help="out file",
+                    required=True)
+
 # Expt parameters
 args = parser.parse_args()
 skt = None
@@ -48,9 +52,10 @@ def main():
     skt.close()
 
     # Print stats
-    print count
-    print "%f" % end
-    sys.stdout.flush()
+    outfile = open("%s" % (args.outfile), 'w+')
+    outfile.write("%d" % (count) + '\n')
+    outfile.write("%f" % (end) + '\n')
+    outfile.close()
 
 if __name__ == '__main__':
     try:
