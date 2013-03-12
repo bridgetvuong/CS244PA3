@@ -75,14 +75,14 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
         numMed = 0
         numLarge = 0
         for sendFile in glob.glob("%ssend-*-*.txt" % loadDir):
+
             (numSent, start, numReceived, end) = parse_data(sendFile)
-            #(numReceived, end) = parse_data(recvFile)
             if numSent == None or numReceived == None:
                 # Skip this data point
                 continue
             if numSent != numReceived:
-                print "num send %d not equal to num received %d" % (numSent, numReceived)
                 continue
+
             bestPossible = float(numSent) * args.packet_size / (args.bw * BITS_PER_MEGABIT / BITS_PER_BYTE) + float(args.delay) / 2 / MILLISECS_PER_SEC
             normalizedFCT = (end-start) / bestPossible
             sumCompletionTimes += normalizedFCT
@@ -99,11 +99,6 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
                 
             #print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
         loads.append(loadNum)
-        # take out bottom 2 and top 2
-        # print sorted(completionTimes)
-        #if numSmall == 0: numSmall += 1
-        #if numMed == 0: numMed += 1
-        #if numLarge == 0: numLarge += 1
         avgCompletionTimes.append(sumCompletionTimes / (numSmall + numMed + numLarge))
         avgCompletionTimesSmall.append(sumCompletionTimesSmall / numSmall)
         completionTimesSmall_99percentile = sorted(completionTimesSmall)[int(floor(0.99*numSmall)):]
