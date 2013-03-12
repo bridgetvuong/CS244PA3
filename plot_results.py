@@ -161,9 +161,9 @@ plt.xlabel("Load Level")
 plt.title("(%d packets, infinity): Avg" % (6827/args.scale))
 
 plt.figure(1)
-print "Saving to %stotal.png" % args.dir
-plt.savefig("%stotal.png" % args.dir)
+print "Saving to %s/total.png" % args.dir
+plt.savefig("%s/total.png" % args.dir)
 
 plt.figure(2)
-print "Saving to %sbreakdown.png" % args.dir
-plt.savefig("%sbreakdown.png" % args.dir)
+print "Saving to %s/breakdown.png" % args.dir
+plt.savefig("%s/breakdown.png" % args.dir)
