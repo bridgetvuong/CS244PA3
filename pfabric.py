@@ -89,8 +89,8 @@ def main():
         print "Bad TCP argument."
         exit(1)
 
-    #os.system("mkdir -p %s" % args.outputdir)
-    #os.system("mkdir -p %s/%s" % (args.outputdir, args.tcp))
+    os.system("mkdir -p %s" % args.outputdir)
+    os.system("mkdir -p %s/%s" % (args.outputdir, args.tcp))
 
     start = time()
 

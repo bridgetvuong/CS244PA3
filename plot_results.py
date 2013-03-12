@@ -46,9 +46,9 @@ args = parser.parse_args()
 # return: (num packets, time)
 def parse_data(filename):
     lines = open(filename, 'r').readlines()
-    if len(lines) is not 2:
-        return (None, None)
-    return (int(lines[0]), float(lines[1]))
+    if len(lines) is not 4:
+        return (None, None, None, None)
+    return (int(lines[0]), float(lines[1]), int(lines[2]), float(lines[3]))
 
 # map load to time
 for typeDir in sorted(glob.glob("%s/*/" % args.dir)): 
@@ -75,11 +75,8 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
         numMed = 0
         numLarge = 0
         for sendFile in glob.glob("%ssend-*-*.txt" % loadDir):
-            recvFile = string.replace(sendFile, 'send', 'recv')
-            if len(glob.glob(recvFile)) is 0:
-                continue
-            (numSent, start) = parse_data(sendFile)
-            (numReceived, end) = parse_data(recvFile)
+            (numSent, start, numReceived, end) = parse_data(sendFile)
+            #(numReceived, end) = parse_data(recvFile)
             if numSent == None or numReceived == None:
                 # Skip this data point
                 continue
@@ -104,6 +101,9 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
         loads.append(loadNum)
         # take out bottom 2 and top 2
         # print sorted(completionTimes)
+        #if numSmall == 0: numSmall += 1
+        #if numMed == 0: numMed += 1
+        #if numLarge == 0: numLarge += 1
         avgCompletionTimes.append(sumCompletionTimes / (numSmall + numMed + numLarge))
         avgCompletionTimesSmall.append(sumCompletionTimesSmall / numSmall)
         completionTimesSmall_99percentile = sorted(completionTimesSmall)[int(floor(0.99*numSmall)):]
