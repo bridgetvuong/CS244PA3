@@ -108,8 +108,8 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
         avgCompletionTimesSmall.append(sumCompletionTimesSmall / numSmall)
         completionTimesSmall_99percentile = sorted(completionTimesSmall)[int(floor(0.99*numSmall)):]
         avgCompletionTimesSmall_99percentile.append(sum(completionTimesSmall_99percentile) / len(completionTimesSmall_99percentile))
-        avgCompletionTimesMed.append(sumCompletionTimesSmall / numMed)
-        avgCompletionTimesLarge.append(sumCompletionTimesSmall / numLarge)
+        avgCompletionTimesMed.append(sumCompletionTimesMed / numMed)
+        avgCompletionTimesLarge.append(sumCompletionTimesLarge / numLarge)
 
     print loads
     print avgCompletionTimes
