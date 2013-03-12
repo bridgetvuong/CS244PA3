@@ -6,3 +6,7 @@
    Inside the two directories (named <workload>_<num hosts>h_<runtime per load>s/)
    created, the plots total.png and breakdown.png show the results for all flows and
    for bucketed flow sizes, respectively.
+Note: Our experiments take approximately 4 hours to run.
+Running the experiment again will delete the old results unless the old results folder
+is renamed. If you keep around many directories of the old results, be warned that you
+may run out of disk space part of the way through the experiment!
