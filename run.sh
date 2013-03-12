@@ -1,21 +1,27 @@
 #!/bin/bash
 
 nhosts=20
-runtime=300
+workloads=( "websearch" "datamining" )
+runtimes=( 180 300 )
 cases=( "minTCP" "TCP" )
-workloads=( "websearch_scaled3" "datamining_scaled3" )
-scale=3
+scale=1
+
 
 # Run on web search workload
-for w in "${workloads[@]}"
+for (( i=0; i<${#workloads[@]}; i++ ))
 do
-  for i in "${cases[@]}"
+  sudo rm -rf "${workloads[$i]}"_"$nhosts"h_"runtime"s
+
+  w="${workloads[$i]}"
+  t="${runtimes[$i]}"
+
+  for c in "${cases[@]}"
     do
-      sudo python ./pfabric.py --outputdir "$w"_"$nhosts"h_"$runtime"s --tcp "$i" --workload workloads/"$w".txt --time "$runtime" --nhosts "$nhosts"
+      sudo python ./pfabric.py --outputdir "$w"_"$nhosts"h_"$t"s --tcp "$c" --workload workloads/"$w".txt --time "$t" --nhosts "$nhosts"
     done
 
     # Plot
-    sudo python ./plot_results.py --dir "$w"_"$nhosts"h_"$runtime"s --scale $scale
+    sudo python ./plot_results.py --dir "$w"_"$nhosts"h_"$t"s --scale "$scale"
 done
 
 #sudo shutdown -h now
