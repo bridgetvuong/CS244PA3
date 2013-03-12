@@ -1,0 +1,8 @@
+1. Create a c1.xlarge EC2 instance using the CS244-Win13-Mininet ami.
+2. git clone https://github.com/bvuong/CS244PA3.git
+3. Run sudo ./setup.sh in the ~/CS244PA3/ directory to set up the environment
+   (You may have to run chmod a+x setup.sh to set the appropriate execute permissions)
+4. To run our experiments, run sudo ./run.sh in the ~/CS244PA3/ directory.
+   Inside the two directories (named <workload>_<num hosts>h_<runtime per load>s/)
+   created, the plots total.png and breakdown.png show the results for all flows and
+   for bucketed flow sizes, respectively.
