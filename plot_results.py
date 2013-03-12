@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import sys
-import math
+from math import floor
 import string
 
 BITS_PER_MEGABIT = 1048576
@@ -14,18 +14,15 @@ BITS_PER_BYTE = 8
 MILLISECS_PER_SEC = 1000
 
 parser = ArgumentParser()
-parser.add_argument('-o', '--out',
-                    help="Save plot to output file, e.g.: --out plot.png",
-                    dest="out",
-                    default=None)
 
 parser.add_argument('--dir',
                     help="Directory from which outputs of the sweep are read.",
                     required=True)
 
-#parser.add_argument('--refdir',
-#                    help="Directory from which reference outputs of the sweep are read.",
-#                    required=True)
+parser.add_argument('--scale',
+                    help="Scale factor for workload distribution.",
+                    type=int,
+                    required=True)
 
 parser.add_argument('--bw',
                     help="link bandwidth in Mbps",
@@ -53,32 +50,6 @@ def parse_data(filename):
         return (None, None)
     return (int(lines[0]), float(lines[1]))
 
-# TODO: normalize flow completion times
-# map load to time
-"""
-avgBestCompletionTimes = {}
-for flowSizeDir in sorted(glob.glob("%s/*/*/" % args.refdir)):
-    print flowSizeDir
-    flowSize = int(str.split(flowSizeDir, "/")[-2])
-    print "=== flowSize = %s ===" % flowSize
-    sumCompletionTimes = 0.0
-    completionTimes = []
-    numTrials = len(glob.glob("%ssend-*.txt" % flowSizeDir))
-    for flowNum in xrange(numTrials):
-        sendFile = "%ssend-%d.txt" % (flowSizeDir, flowNum)
-        recvFile = "%srecv-%d.txt" % (flowSizeDir, flowNum)
-        (numSent, start, end1) = parse_data(sendFile)
-        (numRecv, end) = parse_data(recvFile)
-        bestPossible = float(numSent) * args.packet_size / (args.bw * 1000000 / 8) + float(args.delay) / 2 / 1000
-        completionTime = end1-start
-        completionTimes.append(completionTime)
-        sumCompletionTimes += completionTime
-        #print "IDEAL: Flow of size %d took %f to complete" % (numSent, (end1-start))
-        #print "=== best possible rate: %f" % (bestPossible)
-    avgBestCompletionTimes[flowSize] = sum(sorted(completionTimes)[1:-1]) / (numTrials - 2)
-"""
-
-# TODO: normalize flow completion times
 # map load to time
 for typeDir in sorted(glob.glob("%s/*/" % args.dir)): 
     typeName = typeDir.split('/')[-2]
@@ -86,13 +57,23 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
 
     loads = []
     avgCompletionTimes = []
+    avgCompletionTimesSmall = []
+    avgCompletionTimesSmall_99percentile = []
+    avgCompletionTimesMed = []
+    avgCompletionTimesLarge = []
     for loadDir in sorted(glob.glob("%s/*/" % typeDir)):
         load = str.split(loadDir, "/")
         loadNum = float(load[-2])
         print "=== Load = %.3f ===" % loadNum
 
-        completionTimes = []
+        completionTimesSmall = []
         sumCompletionTimes = 0.0
+        sumCompletionTimesSmall = 0.0
+        sumCompletionTimesMed = 0.0
+        sumCompletionTimesLarge = 0.0
+        numSmall = 0
+        numMed = 0
+        numLarge = 0
         for sendFile in glob.glob("%ssend-*-*.txt" % loadDir):
             recvFile = string.replace(sendFile, 'send', 'recv')
             if len(glob.glob(recvFile)) is 0:
@@ -100,29 +81,89 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
             (numSent, start) = parse_data(sendFile)
             (numReceived, end) = parse_data(recvFile)
             if numSent == None or numReceived == None:
+                # Skip this data point
                 continue
-            bestPossible = float(numSent) * args.packet_size / (args.bw * BITS_PER_MEGABIT / BITS_PER_BYTE) + float(args.delay) / 2 / 1000
+            if numSent != numReceived:
+                print "num send %d not equal to num received %d" % (numSent, numReceived)
+                continue
+            bestPossible = float(numSent) * args.packet_size / (args.bw * BITS_PER_MEGABIT / BITS_PER_BYTE) + float(args.delay) / 2 / MILLISECS_PER_SEC
             normalizedFCT = (end-start) / bestPossible
             sumCompletionTimes += normalizedFCT
-            completionTimes.append(normalizedFCT)
-            print numSent, numReceived
-            print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
-            #print "=== best possible rate: %f" % (bestPossible)
+            if numSent < float(67)/float(args.scale): # 10 KB
+                sumCompletionTimesSmall += normalizedFCT
+                numSmall += 1
+                completionTimesSmall.append(normalizedFCT)
+            elif numSent < float(6827)/float(args.scale): # 10 MB
+                sumCompletionTimesMed += normalizedFCT
+                numMed += 1
+            else:
+                sumCompletionTimesLarge += normalizedFCT
+                numLarge += 1
+                
+            #print "Flow of size %d took %f to complete, minimum possible %f" % (numSent, (end-start), bestPossible)
         loads.append(loadNum)
         # take out bottom 2 and top 2
-        #print sorted(completionTimes)
-        avgCompletionTime = sum(sorted(completionTimes)) / (len(completionTimes))
-        avgCompletionTimes.append(avgCompletionTime)
+        # print sorted(completionTimes)
+        avgCompletionTimes.append(sumCompletionTimes / (numSmall + numMed + numLarge))
+        avgCompletionTimesSmall.append(sumCompletionTimesSmall / numSmall)
+        completionTimesSmall_99percentile = sorted(completionTimesSmall)[int(floor(0.99*numSmall)):]
+        avgCompletionTimesSmall_99percentile.append(sum(completionTimesSmall_99percentile) / len(completionTimesSmall_99percentile))
+        avgCompletionTimesMed.append(sumCompletionTimesSmall / numMed)
+        avgCompletionTimesLarge.append(sumCompletionTimesSmall / numLarge)
 
     print loads
     print avgCompletionTimes
+    print avgCompletionTimesSmall
+    print avgCompletionTimesSmall_99percentile
+    print avgCompletionTimesMed
+    print avgCompletionTimesLarge
+
+    plt.figure(1)
     plt.plot(loads, avgCompletionTimes, label=typeName)
+    plt.figure(2, figsize=(28,5))
+    plt.subplot(141)
+    plt.plot(loads, avgCompletionTimesSmall, label=typeName)
+    plt.subplot(142)
+    plt.plot(loads, avgCompletionTimesSmall_99percentile, label=typeName)
+    plt.subplot(143)
+    plt.plot(loads, avgCompletionTimesMed, label=typeName)
+    plt.subplot(144)
+    plt.plot(loads, avgCompletionTimesLarge, label=typeName)
+
+plt.figure(1)
 plt.legend()
 plt.ylabel("Average Flow Completion Time")
 plt.xlabel("Load Level")
 
-if args.out:
-    print "Saving to %s" % args.out
-    plt.savefig(args.out)
-else:
-    plt.show()
+plt.figure(2, figsize=(28,5))
+plt.subplot(141)
+plt.legend()
+plt.ylabel("Average Flow Completion Time")
+plt.xlabel("Load Level")
+plt.title("(0, %d packets]: Avg" % (67/args.scale))
+
+plt.subplot(142)
+plt.legend()
+plt.ylabel("Average Flow Completion Time")
+plt.xlabel("Load Level")
+plt.title("(0, %d packets]: 99th percentile" % (67/args.scale))
+
+plt.subplot(143)
+plt.legend()
+plt.ylabel("Average Flow Completion Time")
+plt.xlabel("Load Level")
+plt.title("(%d packets, %d packets]: Avg" % (67/args.scale, 6827/args.scale))
+
+plt.subplot(144)
+plt.legend()
+plt.ylabel("Average Flow Completion Time")
+plt.xlabel("Load Level")
+plt.title("(%d packets, infinity): Avg" % (6827/args.scale))
+
+plt.figure(1)
+print "Saving to %stotal.png" % args.dir
+plt.savefig("%stotal.png" % args.dir)
+
+plt.figure(2)
+print "Saving to %sbreakdown.png" % args.dir
+plt.savefig("%sbreakdown.png" % args.dir)
