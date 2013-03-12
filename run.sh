@@ -1,9 +1,10 @@
 #!/bin/bash
 
 nhosts=20
-runtime=1200
+runtime=300
 cases=( "minTCP" "TCP" )
-workloads=( "websearch_scaled3" "datamining_scaled3")
+workloads=( "websearch_scaled3" "datamining_scaled3" )
+scale=3
 
 # Run on web search workload
 for w in "${workloads[@]}"
@@ -14,7 +15,7 @@ do
     done
 
     # Plot
-    sudo python ./plot_results.py --dir "$w"_"$nhosts"h_"$runtime"s --out "$w"_"$nhosts"h_"$runtime"s/"$w"_"$nhosts"h_"$runtime"s.png
+    sudo python ./plot_results.py --dir "$w"_"$nhosts"h_"$runtime"s --scale $scale
 done
 
 #sudo shutdown -h now
