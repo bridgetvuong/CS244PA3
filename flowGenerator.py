@@ -89,9 +89,11 @@ def main():
         prio = args.priority
         if prio == None:
             packetsLeft = (args.num_packets - i)
-            prio = int(math.floor(math.log(packetsLeft + 1)/math.log(args.max_packets + 1)*args.num_bands))
-        #pkt = ('%02x' % prio).decode('hex')*(args.packet_size-52)
-        #sendPkt = ('%02x' % prio).decode('hex') + pkt
+            prio = int((math.log(packetsLeft) + 1)/math.log(args.max_packets + 1)*args.num_bands)
+            if prio < 1:
+                prio = 1
+            if prio > 16:
+                prio = 16
         skt.sendall(pkts[prio-1])
     skt.close()
 
