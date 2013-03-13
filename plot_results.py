@@ -12,6 +12,8 @@ import string
 BITS_PER_MEGABIT = 1048576
 BITS_PER_BYTE = 8
 MILLISECS_PER_SEC = 1000
+BYTES_PER_KB = 1024
+BYTES_PER_MB = 1048576
 
 parser = ArgumentParser()
 
@@ -86,11 +88,11 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
             bestPossible = float(numSent) * args.packet_size / (args.bw * BITS_PER_MEGABIT / BITS_PER_BYTE) + float(args.delay) / 2 / MILLISECS_PER_SEC
             normalizedFCT = (end-start) / bestPossible
             sumCompletionTimes += normalizedFCT
-            if numSent < float(67)/float(args.scale): # 10 KB
+            if numSent < (100*BYTES_PER_KB/args.packet_size)/float(args.scale): # 100 KB
                 sumCompletionTimesSmall += normalizedFCT
                 numSmall += 1
                 completionTimesSmall.append(normalizedFCT)
-            elif numSent < float(6827)/float(args.scale): # 10 MB
+            elif numSent < (19*BYTES_PER_MB/args.packet_size)/float(args.scale): # 10 MB
                 sumCompletionTimesMed += normalizedFCT
                 numMed += 1
             else:
@@ -113,47 +115,50 @@ for typeDir in sorted(glob.glob("%s/*/" % args.dir)):
     print avgCompletionTimesMed
     print avgCompletionTimesLarge
 
+    type = typeName
+    if (type == "minTCP"):
+        type += "+pFabric"
     plt.figure(1)
-    plt.plot(loads, avgCompletionTimes, label=typeName)
+    plt.plot(loads, avgCompletionTimes, label=type)
     plt.figure(2, figsize=(28,5))
     plt.subplot(141)
-    plt.plot(loads, avgCompletionTimesSmall, label=typeName)
+    plt.plot(loads, avgCompletionTimesSmall, label=type)
     plt.subplot(142)
-    plt.plot(loads, avgCompletionTimesSmall_99percentile, label=typeName)
+    plt.plot(loads, avgCompletionTimesSmall_99percentile, label=type)
     plt.subplot(143)
-    plt.plot(loads, avgCompletionTimesMed, label=typeName)
+    plt.plot(loads, avgCompletionTimesMed, label=type)
     plt.subplot(144)
-    plt.plot(loads, avgCompletionTimesLarge, label=typeName)
+    plt.plot(loads, avgCompletionTimesLarge, label=type)
 
 plt.figure(1)
-plt.legend()
+plt.legend(loc=2)
 plt.ylabel("Average Flow Completion Time")
 plt.xlabel("Load Level")
 
 plt.figure(2, figsize=(28,5))
 plt.subplot(141)
-plt.legend()
+plt.legend(loc=2)
 plt.ylabel("Average Flow Completion Time")
 plt.xlabel("Load Level")
-plt.title("(0, %d packets]: Avg" % (67/args.scale))
+plt.title("(0, %.1fKB]: Avg" % (100.0/float(args.scale)))
 
 plt.subplot(142)
-plt.legend()
+plt.legend(loc=2)
 plt.ylabel("Average Flow Completion Time")
 plt.xlabel("Load Level")
-plt.title("(0, %d packets]: 99th percentile" % (67/args.scale))
+plt.title("(0, %.1fKB]: 99th percentile" % (100.0/float(args.scale)))
 
 plt.subplot(143)
-plt.legend()
+plt.legend(loc=2)
 plt.ylabel("Average Flow Completion Time")
 plt.xlabel("Load Level")
-plt.title("(%d packets, %d packets]: Avg" % (67/args.scale, 6827/args.scale))
+plt.title("(%.1fKB, %.1fMB]: Avg" % (100.0/float(args.scale), 10.0/float(args.scale)))
 
 plt.subplot(144)
-plt.legend()
+plt.legend(loc=2)
 plt.ylabel("Average Flow Completion Time")
 plt.xlabel("Load Level")
-plt.title("(%d packets, infinity): Avg" % (6827/args.scale))
+plt.title("(%.1fMB, infinity): Avg" % (10.0/float(args.scale)))
 
 plt.figure(1)
 print "Saving to %s/total.png" % args.dir
