@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nhosts=20
+nhosts=15
 workloads=( "websearch" "datamining" )
 runtimes=( 180 300 )
 cases=( "minTCP" "TCP" )
